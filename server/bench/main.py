@@ -18,6 +18,7 @@ from .hub import Bench
 from .labs import load_labs
 from .pod import OFF, PodBridge
 from .protocol import BadMessage, ErrorOut, parse_inbound
+from .voice_in import MIC_OFF, CartesiaSTT, Mic, VoiceIn, mic_device
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LABS_DIR = REPO_ROOT / "labs"
@@ -28,8 +29,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(m
 log = logging.getLogger("bench")
 
 
-def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_port: str | None = None) -> FastAPI:
-    """pod_port: serial device path, "off" for no pod, or None to use POD_PORT / auto-detect."""
+def create_app(
+    *, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_port: str | None = None, mic: str | None = None
+) -> FastAPI:
+    """pod_port: serial device path, "off" for no pod, or None to use POD_PORT / auto-detect.
+    mic: input device index or name, "off" for no mic, or None to use MIC_DEVICE (empty = system default)."""
     if demo_ui is None:
         demo_ui = os.environ.get("BENCH_DEMO_UI") == "1"
     if pod_port is None:
@@ -41,6 +45,21 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
     if pod:
         bench.session.pod_command = pod.send
     agent = None if demo_ui else Agent(bench, pod_connected=lambda: bool(pod and pod.connected))
+    if mic is None:
+        mic = os.environ.get("MIC_DEVICE", "")
+    use_mic = agent is not None and mic.strip().lower() not in MIC_OFF
+
+    def open_voice() -> VoiceIn | None:
+        m = Mic(mic_device(mic))
+        try:
+            m.open()
+        except Exception as e:
+            log.error("mic unavailable (%s); the talk button won't record. MIC_DEVICE=%r, see "
+                      "`python -m bench.voice_in --list-devices`", e, mic)
+            return None
+        if not os.environ.get("CARTESIA_API_KEY"):
+            log.warning("CARTESIA_API_KEY is not set (.env); speech-to-text will fail")
+        return VoiceIn(bench.session, m, CartesiaSTT(), on_transcript=agent.turn, speak=lambda t: agent.speak(t))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -51,6 +70,8 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
             tasks.append(asyncio.create_task(run_demo(bench)))
         if pod:
             pod.start(asyncio.get_running_loop())
+        if use_mic:
+            bench.voice = open_voice()
         if agent:
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 log.warning("ANTHROPIC_API_KEY is not set (.env); Bench will answer with its fallback line")
@@ -59,6 +80,8 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
         yield
         if pod:
             pod.stop()
+        if bench.voice:
+            bench.voice.mic.close()
         for t in tasks:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
