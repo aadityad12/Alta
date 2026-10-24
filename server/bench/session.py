@@ -22,12 +22,13 @@ LED_FOR_STATE = {
 }
 
 # idle -> listening -> transcribing -> thinking -> speaking -> idle, plus:
-#   idle -> thinking (typed text, probe events), speaking -> listening (barge-in).
+#   idle -> thinking (typed text, probe events), speaking -> listening (barge-in),
+#   transcribing -> speaking ("I didn't catch that").
 # Any state may go to idle or error.
 _NEXT = {
     State.idle: {State.listening, State.thinking},
     State.listening: {State.transcribing},
-    State.transcribing: {State.thinking},
+    State.transcribing: {State.thinking, State.speaking},
     State.thinking: {State.speaking},
     State.speaking: {State.listening},
     State.error: set(),
