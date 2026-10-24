@@ -16,6 +16,8 @@ scripts/dev.sh
 
 No pod or API keys yet? `scripts/dev.sh --demo-ui` runs the server on fake data: probes, overlays, captions and states loop on a demo copy of Lab 1.
 
+No pod on the desk? Run the mock pod (#9) in a second terminal: `cd server && uv run python tools/mock_pod.py`, then start the server with `POD_PORT=/tmp/bench-pod scripts/dev.sh` (or put that in `.env`). Type `help` in the mock for commands like `Y 10c`, `fault led_reversed`, `btn`.
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs
