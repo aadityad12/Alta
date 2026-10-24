@@ -18,6 +18,7 @@ class FakePod:
         self.hello = True
         self.boot_s = 0.0  # > 0: act like an Uno that resets on open (silent, then hello, then samples)
         self.answers_ping = True
+        self.paused = False  # True: stop sending samples (a reboot or brown-out), but stay plugged in
         self.mv = list(mv)
         self.btn = 0
         self.commands: list[str] = []
@@ -89,7 +90,9 @@ class FakePod:
                         self.send({"pong": 1, "fw": "0.1.0"})
                     elif cmd != "PING" and not cmd.startswith("LED "):
                         self.send({"err": "unknown_cmd"})
-            if time.monotonic() >= next_sample:
+            if self.paused:
+                next_sample = time.monotonic()
+            elif time.monotonic() >= next_sample:
                 next_sample += 0.05
                 self.send({"seq": seq, "t": seq * 50, "mv": self.mv, "lo": [v - 5 for v in self.mv],
                            "hi": [v + 5 for v in self.mv], "vcc": 4987, "btn": self.btn})
