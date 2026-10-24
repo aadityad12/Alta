@@ -1,0 +1,80 @@
+# Lab 2 · Light sensor — Bench's answer key for this lab.
+# Schema: docs/CONTRACTS.md §6 (issue #2). Hole strings: §4.
+# Lives in rows 25–35 of the lab breadboard; Lab 1 shares the same board in rows 5–15.
+#
+# Values are DRAFT and TO BE MEASURED on the real board with the pod (#4 verify
+# step, #38). The photoresistor depends heavily on the room's lighting.
+#
+# Circuit (voltage divider): 5 V rail → W1 → row 26 → LDR1 → row 30 (output) → R1 10 kΩ → row 34 → W2 → GND rail
+#   Vout = 5 V × 10k / (10k + R_ldr)
+#   Assumed kit photoresistor (GL55xx-type): ~300 Ω under a flashlight, ~4 kΩ in room
+#   light, ~200 kΩ covered by a finger.
+#     bright  ≈ 4.5–4.9 V   room ≈ 3.5 V   covered ≈ 0.2–1 V
+#
+# n_out's expected_mv is the ROOM-LIGHT value. Covering or lighting the sensor
+# moves it out of the band on purpose; that's the lab.
+
+id: lab2-light
+title: "Lab 2 · Light sensor"
+supply_mv: 5000
+
+parts:
+  - {ref: W1,   kind: wire, color: red, pins: {"1": "rail:a+", "2": "26a"}}
+  - {ref: LDR1, kind: photoresistor, pins: {"1": "26c", "2": "30c"}}
+  - {ref: R1,   kind: resistor, value_ohm: 10000, pins: {"1": "30d", "2": "34d"}}
+  - {ref: W2,   kind: wire, color: black, pins: {"1": "34a", "2": "rail:a-"}}
+
+nets:
+  - {id: n_5v,  label: "5 V",                 holes: ["rail:a+", "26:a-e"], expected_mv: 5000, tol_mv: 250}
+  # TO BE MEASURED. Wide band because venue lighting varies.
+  - {id: n_out, label: "Output (room light)", holes: ["30:a-e"],            expected_mv: 3500, tol_mv: 1000}
+  - {id: n_gnd, label: "Ground",              holes: ["34:a-e", "rail:a-"], expected_mv: 0,    tol_mv: 100}
+
+steps:
+  - {n: 1, title: "Power the rails",                   nets: [n_5v]}
+  - {n: 2, title: "Add the photoresistor",             nets: [n_5v]}
+  - {n: 3, title: "Add the 10 kΩ to ground",           nets: [n_out, n_gnd]}
+  - {n: 4, title: "Cover the sensor and watch the output", nets: [n_out]}
+
+# readings = what each net reads in ROOM LIGHT with the fault staged (every net listed).
+faults:
+  - id: wrong_resistor_220
+    name: "220 Ω resistor instead of 10 kΩ"
+    how_to_stage: "Swap R1 for a 220 Ω (red-red-brown) in the same holes, 30d and 34d."
+    symptom: "Output sits near 0 V and barely moves when you cover the sensor."
+    readings: {n_5v: 5000, n_out: 260, n_gnd: 0}
+    root_cause: "In a voltage divider the output depends on the ratio of the two resistances. 220 Ω is tiny next to the sensor's ~4 kΩ, so almost all of the 5 V drops across the sensor. The output stays near 0 whatever the light does."
+    hints:
+      - "L1 nudge: The output's hardly moving. A divider splits the 5 volts between its two parts. How should that split look?"
+      - "L2 question: The output's only about a quarter of a volt. Which part must be taking almost all of the 5 volts?"
+      - "L3 point: Check the resistor between rows 30 and 34. What do its color bands say?"
+      - "L4 fix: That's 220 Ω, red-red-brown. Swap in the 10 kΩ, brown-black-orange, so it's closer to the sensor's resistance."
+
+  - id: output_probe_wrong_row
+    name: "Output probe in the wrong row"
+    # Staged as a probe mistake, so the circuit itself is fine. readings show what the
+    # probe reports when the student thinks it's on each net.
+    how_to_stage: "Plug the probe into row 34 (the resistor's ground end) instead of row 30."
+    symptom: "Reading is stuck at 0 V and doesn't change when you cover the sensor."
+    readings: {n_5v: 5000, n_out: 0, n_gnd: 0}
+    root_cause: "The probe is in row 34, which is wired straight to ground, so it always reads 0 V. The output node is row 30, between the sensor and the resistor."
+    hints:
+      - "L1 nudge: A reading that never moves at all is suspicious. Is the probe measuring what we think it is?"
+      - "L2 question: Exactly 0 volts that never changes. Which rows in this circuit are always at 0 volts?"
+      - "L3 point: Look where your yellow probe wire goes in. Which row does the manual say the output is?"
+      - "L4 fix: The probe is in row 34, on ground. Move it to row 30, where the sensor and the resistor meet."
+
+  - id: parts_swapped
+    name: "Sensor and resistor swapped (works, but backwards)"
+    # Not really a mistake. It's a teaching moment: both circuits are valid.
+    how_to_stage: "Swap the two parts: R1 (10 kΩ) in 26c and 30c, LDR1 in 30d and 34d."
+    symptom: "It responds to light, but backwards: covering the sensor makes the output go UP."
+    readings: {n_5v: 5000, n_out: 1400, n_gnd: 0}
+    root_cause: "The sensor is now on the bottom of the divider. Covering it raises its resistance, so it takes a bigger share of the 5 V and the output rises. Nothing is broken; it's now a darkness detector instead of a light detector."
+    hints:
+      - "L1 nudge: Interesting, it does respond to light! Cover the sensor and watch which way the output goes."
+      - "L2 question: Covering it makes the output go up. When you cover the sensor, does its resistance go up or down, and what does that do to its share of the 5 volts?"
+      - "L3 point: Compare the manual's order with your board. Which part is on top, between 5 V and row 30?"
+      - "L4 fix: The sensor and the resistor are swapped. That's a valid darkness detector, but to match the manual, put the sensor between rows 26 and 30 and the 10 kΩ between rows 30 and 34."
+
+verified: false
