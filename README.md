@@ -26,6 +26,8 @@ cd server && uv run python -m bench.cli --lab lab1-led --pod off   # or --pod /t
 
 Check the mic and speech-to-text: `cd server && uv run python -m bench.voice_in --list-devices`, then `--test 4` (records 4 s and prints the transcript). Pick a mic with `MIC_DEVICE` in `.env`.
 
+Hear Bench's voice: `cd server && uv run python -m bench.voice_out "Row 10 reads 1.92 V."` (prints the time to first audio). Pick the voice and speaker with `CARTESIA_VOICE_ID`, `BENCH_VOICE_SPEED` and `SPEAKER_DEVICE` in `.env`.
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs

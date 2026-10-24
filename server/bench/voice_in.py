@@ -103,9 +103,9 @@ class Mic:
                 self._clip.append(block)
                 self._held += len(block)
 
-    def start_clip(self) -> None:
+    def start_clip(self, preroll: bool = True) -> None:
         with self._lock:
-            self._clip = list(self._ring)
+            self._clip = list(self._ring) if preroll else []
             self._ring.clear()
             self._held = 0
 
@@ -155,9 +155,10 @@ class VoiceIn:
         self.timings: list[float] = []  # seconds from button release to transcript ready
         self._tasks: set[asyncio.Task] = set()
 
-    def press(self) -> None:
-        """The button went down and the session is now listening."""
-        self.mic.start_clip()
+    def press(self, barge_in: bool = False) -> None:
+        """The button went down and the session is now listening. On barge-in the pre-roll holds Bench's own
+        voice from the speaker, so the clip starts at the press instead."""
+        self.mic.start_clip(preroll=not barge_in)
 
     def release(self) -> None:
         """The button came up while listening. Transcribes in the background so the bus keeps flowing."""
