@@ -11,7 +11,9 @@ command -v npm >/dev/null || { echo "Need Node.js 20+ (brew install node)"; exit
 (cd "$ROOT/server" && uv sync --quiet)
 [ -d "$ROOT/web/node_modules" ] || (cd "$ROOT/web" && npm install --silent)
 
-trap 'kill 0' EXIT
+# Stop the whole process group (uvicorn reloader, npm, vite) on Ctrl-C or exit.
+cleanup() { trap - INT TERM EXIT; kill 0 2>/dev/null; }
+trap cleanup INT TERM EXIT
 
 (cd "$ROOT/server" && uv run uvicorn bench.main:app --reload --port 8000) &
 (cd "$ROOT/web" && npm run dev) &
