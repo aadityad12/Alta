@@ -26,7 +26,7 @@ cd server && uv run python -m bench.cli --lab lab1-led --pod off   # or --pod /t
 
 Check the mic and speech-to-text: `cd server && uv run python -m bench.voice_in --list-devices`, then `--test 4` (records 4 s and prints the transcript). Pick a mic with `MIC_DEVICE` in `.env`.
 
-Hear ALTA's voice: `cd server && uv run python -m bench.voice_out "Row 10 reads 1.92 V."` (prints the time to first audio). Pick the voice and speaker with `CARTESIA_VOICE_ID`, `BENCH_VOICE_SPEED` and `SPEAKER_DEVICE` in `.env`.
+Hear ALTA's voice: `cd server && uv run python -m bench.voice_out "Row 10 reads 1.92 V."` (prints the time to first audio). Choose a man's or woman's voice (Gavin or Maya) with `BENCH_VOICE=man|woman` in `.env`, or `--voice woman` on `python -m bench`, `bench.talk` and `bench.voice_out`. Set speed and speaker with `BENCH_VOICE_SPEED` and `SPEAKER_DEVICE`.
 
 Every student session is logged to `recordings/<time>-<lab>.jsonl` (gitignored; `BENCH_RECORD_DIR=off` turns it off), and each spoken turn's latency is printed in the server log. Summarize the logs: `cd server && uv run python -m bench.metrics ../recordings/*.jsonl` (turns, probes, hint level, time to fix, latency).
 

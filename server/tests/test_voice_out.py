@@ -7,7 +7,7 @@ from bench import bus as ev
 from bench.bus import Event
 from bench.agent import GLITCH_LINE
 from bench.protocol import State
-from bench.voice_out import SentenceSplitter, Speaker, _aiter, normalize, sentences_of
+from bench.voice_out import VOICES, SentenceSplitter, Speaker, _aiter, normalize, pick_voice, sentences_of
 
 from .fake_claude import msg, tool
 from .test_agent import make, of, states
@@ -287,3 +287,17 @@ def test_emotion_goes_into_generation_config():
     sp._conn = FakeConn()
     asyncio.run(sp.say("Nice work!"))
     assert sp._conn.kwargs[0]["generation_config"] == {"emotion": "content"}
+
+
+def test_voice_choice(monkeypatch):
+    monkeypatch.delenv("CARTESIA_VOICE_ID", raising=False)
+    monkeypatch.delenv("BENCH_VOICE", raising=False)
+    assert pick_voice() == VOICES["man"] == ("Gavin", "f4a3a8e4-694c-4c45-9ca0-27caf97901b5")
+    monkeypatch.setenv("BENCH_VOICE", " Woman ")
+    assert pick_voice() == VOICES["woman"] == ("Maya", "cbaf8084-f009-4838-a096-07ee2e6612b1")
+    assert Speaker(None, FakePlayer()).voice_id == VOICES["woman"][1]
+    assert Speaker(None, FakePlayer(), voice_id="v1").voice_id == "v1"
+    monkeypatch.setenv("BENCH_VOICE", "robot")  # a typo doesn't stop the server: the man's voice
+    assert pick_voice() == VOICES["man"]
+    monkeypatch.setenv("CARTESIA_VOICE_ID", "custom-id")  # an explicit id beats the choice
+    assert pick_voice() == ("custom", "custom-id")

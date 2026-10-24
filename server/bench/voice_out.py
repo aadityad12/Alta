@@ -6,12 +6,14 @@ stop() (barge-in, reset) silences the speaker at once and drops the rest of what
 
     cd server
     uv run python -m bench.voice_out "Row 10 reads 1.92 V, so the LED is on."   # hear it + timing
+    uv run python -m bench.voice_out --voice woman "Row 10 reads 1.92 V."
     uv run python -m bench.voice_out --list-devices
 
     uv run python -m bench.voice_out --audition            # the same ALTA lines in 9 voices, to pick one
     uv run python -m bench.voice_out --audition --emotion content
 
-Env: CARTESIA_VOICE_ID (default: a placeholder until #36 picks one), BENCH_VOICE_SPEED (0.6-1.5),
+Env: BENCH_VOICE (man = Gavin, the default; woman = Maya; or --voice), CARTESIA_VOICE_ID (any other
+voice; beats BENCH_VOICE), BENCH_VOICE_SPEED (0.6-1.5),
 BENCH_VOICE_EMOTION (empty = inferred from the text; e.g. content, calm, happy), BENCH_TTS_MODEL,
 SPEAKER_DEVICE (empty = system default output, index or name substring).
 """
@@ -37,10 +39,13 @@ log = logging.getLogger(__name__)
 
 TTS_RATE = 24_000
 TTS_MODEL = os.environ.get("BENCH_TTS_MODEL", "sonic-3.5")
-DEFAULT_VOICE = "30894953-bcce-41fe-892c-15ce19c843ff"  # "Parker", casual and supportive: placeholder for #36
-# Candidates for #36: Cartesia's list of voices that respond best to emotion, plus the placeholder.
+# The two voices to choose from before a session (#36): BENCH_VOICE=man|woman or --voice. Picked by ear.
+VOICES = {"man": ("Gavin", "f4a3a8e4-694c-4c45-9ca0-27caf97901b5"),
+          "woman": ("Maya", "cbaf8084-f009-4838-a096-07ee2e6612b1")}
+DEFAULT_CHOICE = "man"
+# Candidates for #36: Cartesia's list of voices that respond best to emotion, plus the old placeholder.
 AUDITION_VOICES = {
-    "Parker": DEFAULT_VOICE,
+    "Parker": "30894953-bcce-41fe-892c-15ce19c843ff",
     "Kyle": "c961b81c-a935-4c17-bfb3-ba2239de8c2f", "Jace": "6776173b-fd72-460d-89b3-d85812ee518d",
     "Leo": "0834f3df-e650-4766-a20c-5a93a43aa6e3", "Gavin": "f4a3a8e4-694c-4c45-9ca0-27caf97901b5",
     "Tessa": "6ccbfb76-1fc6-48f7-b71d-91ac6298247b", "Maya": "cbaf8084-f009-4838-a096-07ee2e6612b1",
@@ -198,6 +203,17 @@ class Player:
 
 # ---------- speaker ----------
 
+def pick_voice() -> tuple[str, str]:
+    """(name, Cartesia voice id): CARTESIA_VOICE_ID if set, else BENCH_VOICE (man|woman), else the man's."""
+    if vid := os.environ.get("CARTESIA_VOICE_ID", "").strip():
+        return "custom", vid
+    choice = os.environ.get("BENCH_VOICE", "").strip().lower() or DEFAULT_CHOICE
+    if choice not in VOICES:
+        log.warning("BENCH_VOICE=%r isn't one of %s; using %s", choice, "|".join(VOICES), DEFAULT_CHOICE)
+        choice = DEFAULT_CHOICE
+    return VOICES[choice]
+
+
 class Speaker:
     """Speaks utterances one at a time. Each sentence is captioned as it's sent, and `speaking` starts with
     the first audio. An utterance is muted by stop(), and so is anything else from the same owner (one
@@ -207,7 +223,7 @@ class Speaker:
                  model: str = TTS_MODEL, speed: float | None = None, emotion: str | None = None) -> None:
         self.session = session
         self.player = player
-        self.voice_id = voice_id or os.environ.get("CARTESIA_VOICE_ID") or DEFAULT_VOICE
+        self.voice_name, self.voice_id = ("custom", voice_id) if voice_id else pick_voice()
         self.model = model
         if speed is None and os.environ.get("BENCH_VOICE_SPEED"):
             speed = float(os.environ["BENCH_VOICE_SPEED"])
@@ -393,7 +409,8 @@ async def _say(text: str) -> None:
     speaker = Speaker(session, player)
     t0 = time.monotonic()
     await speaker.connect()
-    print(f"connected in {(time.monotonic() - t0) * 1000:.0f} ms · voice {speaker.voice_id} · {speaker.model}")
+    print(f"connected in {(time.monotonic() - t0) * 1000:.0f} ms · voice {speaker.voice_name} {speaker.voice_id}"
+          f" · {speaker.model}")
     print(f"says: {' '.join(normalize(x) for x in sentences_of(text))}")
     await speaker.say(text)
     print(f"first audio {speaker.timings[0] * 1000:.0f} ms after text ready" if speaker.timings else "no audio")
@@ -428,9 +445,12 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="bench.voice_out", description="Hear ALTA's voice.")
     p.add_argument("text", nargs="?")
     p.add_argument("--list-devices", action="store_true")
+    p.add_argument("--voice", choices=("man", "woman"), help="ALTA's voice (default: BENCH_VOICE from .env, else man)")
     p.add_argument("--audition", action="store_true", help="the same ALTA lines in each candidate voice")
     p.add_argument("--emotion", default=None, help="with --audition: e.g. content, calm, happy, enthusiastic")
     args = p.parse_args()
+    if args.voice:
+        os.environ["BENCH_VOICE"] = args.voice
     if args.list_devices:
         _list_devices()
     elif args.audition:
