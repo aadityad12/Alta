@@ -17,8 +17,8 @@ class FakeMic:
         self.held = held
         self.recording = False
 
-    def start_clip(self):
-        self.recording = True
+    def start_clip(self, preroll=True):
+        self.recording, self.preroll = True, preroll
 
     def stop_clip(self):
         was, self.recording = self.recording, False
@@ -124,6 +124,21 @@ def test_button_does_nothing_while_bench_is_thinking():
     assert not of(sent, "state") and stt.clips == []
 
 
+def test_barge_in_skips_the_preroll():
+    bench, voice, stt, sent, turns = setup("hello")
+
+    async def go():
+        await bench.handle(Event(ev.PTT, True))
+        first = voice.mic.preroll
+        await bench.handle(Event(ev.PTT, False))
+        await asyncio.gather(*voice._tasks)
+        bench.session.state = State.speaking
+        await bench.handle(Event(ev.PTT, True))
+        return first, voice.mic.preroll
+
+    assert asyncio.run(go()) == (True, False)
+
+
 def feed(mic, n_blocks, value):
     for _ in range(n_blocks):
         mic._callback(np.full((BLOCK, 1), value, dtype=np.int16), BLOCK, None, None)
@@ -140,6 +155,10 @@ def test_mic_keeps_300ms_of_preroll():
     assert (pcm[: int(0.3 * SAMPLE_RATE)] == 1).all() and (pcm[int(0.3 * SAMPLE_RATE):] == 2).all()
     feed(mic, 2, 3)         # back to filling the ring, not a clip
     assert mic.stop_clip() == (None, 0.0)
+    mic.start_clip(preroll=False)
+    feed(mic, 2, 4)
+    pcm, held = mic.stop_clip()
+    assert len(pcm) == 2 * BLOCK and (pcm == 4).all()
 
 
 def test_wav_is_16khz_mono_16bit():
