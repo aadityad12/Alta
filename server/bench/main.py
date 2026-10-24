@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
 from . import bus as ev
+from .agent import Agent
 from .bus import Event
 from .hub import Bench
 from .labs import load_labs
@@ -39,6 +40,7 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
     pod = PodBridge(bench.bus, pod_port) if use_pod else None
     if pod:
         bench.session.pod_command = pod.send
+    agent = None if demo_ui else Agent(bench, pod_connected=lambda: bool(pod and pod.connected))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -49,6 +51,11 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
             tasks.append(asyncio.create_task(run_demo(bench)))
         if pod:
             pod.start(asyncio.get_running_loop())
+        if agent:
+            if not os.environ.get("ANTHROPIC_API_KEY"):
+                log.warning("ANTHROPIC_API_KEY is not set (.env); Bench will answer with its fallback line")
+            log.info("agent model: %s", agent.model)
+            tasks.append(asyncio.create_task(agent.run()))
         yield
         if pod:
             pod.stop()
@@ -59,6 +66,7 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_po
     app = FastAPI(title="Bench", lifespan=lifespan)
     app.state.bench = bench
     app.state.pod = pod
+    app.state.agent = agent
 
     @app.get("/health")
     def health() -> dict:
