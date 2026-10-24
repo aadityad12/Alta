@@ -223,6 +223,7 @@ def test_barge_in_stops_the_speaker():
     ("Try row 13d", "Try row 13, column d"),
     ("anywhere in 10:a-e", "anywhere in row 10"),
     ("the rail:a- rail", "the the minus rail rail"),
+    ("yellow on rail:j+", "yellow on the plus rail"),
     ("The LED 💡 is **on**", "The L E D is on"),
     ("Two LEDs", "Two L E Ds"),
 ])

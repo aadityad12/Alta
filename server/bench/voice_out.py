@@ -47,7 +47,7 @@ _VOLTS = re.compile(rf"(?<![\w.])({_HEDGE})?(\d+(?:\.\d+)?)\s?(mV|V)\b")
 _OHMS = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)\s?([kM]?)\s?(?:Ω|ohms?\b)")
 _STRIP = re.compile(r"\b(?:row\s+)?(\d{1,2}):[a-j]-[a-j]\b")
 _HOLE = re.compile(r"\b(?:row\s+)?(\d{1,2})([a-j])\b")
-_RAIL = re.compile(r"\brail:[a-d]?([+-])")
+_RAIL = re.compile(r"\brail:[aj]?([+-])")  # CONTRACTS §4: rail:a+ rail:a- rail:j+ rail:j-
 
 
 def _num(x: float) -> str:
