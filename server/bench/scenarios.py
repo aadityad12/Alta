@@ -9,8 +9,8 @@ Each run: the mock pod's voltage model (#9) has the fault staged, and the probe 
 simulated clock. Claude is real (ANTHROPIC_API_KEY). The scripted student:
 - opens with the fault's symptom from lab.yaml
 - plugs a probe wherever `ask_for_probe` points (pull it out, then push it in, as a person would)
-- covers the light sensor or shines a light on it when Bench says so (Lab 2)
-- fixes the fault once Bench points at it: record_diagnosis with the right fault at hint level 3 or 4
+- covers the light sensor or shines a light on it when ALTA says so (Lab 2)
+- fixes the fault once ALTA points at it: record_diagnosis with the right fault at hint level 3 or 4
 - answers a question about what's on the board ("which row is the long leg in?") truthfully, from the fault's
   how_to_stage (a claude-haiku-5-5 call; questions that ask it to reason get a canned line instead)
 - otherwise says the next canned line, ending with asking for the answer twice
@@ -86,7 +86,7 @@ class Step:
     source: str                     # "student" or "event"
     said: str                       # the student's words, or the monitor's event text
     actions: list[str]              # what the student did on the board just before (mock pod commands)
-    reply: str | None = None        # what Bench said (None = silent)
+    reply: str | None = None        # what ALTA said (None = silent)
     tools: list[dict[str, Any]] = field(default_factory=list)
     ms: int = 0                     # the whole turn, wall clock
     first_text_ms: int | None = None  # turn start -> Claude's first text
@@ -134,7 +134,7 @@ class Student:
         return f"Hi! I built the circuit from the manual, but {symptom}"
 
     def act(self, step: Step) -> list[str]:
-        """Do what Bench just asked on the board. Returns the mock pod commands, in order."""
+        """Do what ALTA just asked on the board. Returns the mock pod commands, in order."""
         cmds = []
         diags = [t["input"] for t in step.tools if t["name"] == "record_diagnosis" and not t["error"]]
         if not self.fixed and any(d.get("fault_id") == self.fault["id"] and d.get("hint_level", 0) >= 3 for d in diags):
@@ -360,8 +360,8 @@ def check(run: Run, fault: dict) -> None:
             if stmts > 2 or qs > 1:
                 rules["4 short replies"].append(f"turn {i}: {stmts} sentences + {qs} questions")
     if not run.resolved and not rules["3 confirm the fix"]:
-        why = "the student fixed it, but Bench never confirmed it" if fixed else \
-            f"Bench never pointed at {fault['id']} (hint ≥ 3), so the student never fixed it"
+        why = "the student fixed it, but ALTA never confirmed it" if fixed else \
+            f"ALTA never pointed at {fault['id']} (hint ≥ 3), so the student never fixed it"
         rules["3 confirm the fix"].append(why)
     run.rules = rules
 

@@ -15,7 +15,7 @@ In this lab you'll build a basic LED circuit on a breadboard: a 5 V supply, a 22
 | D1 | LED | Red | Two legs. The **longer leg** is the anode (+); the shorter leg is the cathode (−). |
 | W2 | Jumper wire | — | Black |
 
-**Equipment:** 830-point breadboard (you'll use rows 5–15) and the Bench probe pod. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
+**Equipment:** 830-point breadboard (you'll use rows 5–15) and the ALTA probe pod. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
 
 A quick breadboard reminder: the five holes in each row-half (a–e or f–j) are connected to each other. The long rails along the edge are connected along their whole length.
 

@@ -52,14 +52,14 @@ td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
 <section>
 <h3>The setup at a glance</h3>
 <p class="sub">Six things on the desk. The table below says what each one does, using a human TA as the comparison.</p>
-<svg id="bench" viewBox="0 48 700 306" width="100%" role="img" aria-label="Bench setup"></svg>
+<svg id="bench" viewBox="0 48 700 306" width="100%" role="img" aria-label="ALTA setup"></svg>
 <div class="roles">
-<div class="role"><div class="t"><span class="n">1</span>Phone camera</div><div class="as">= Bench's eyes</div>Held about 25 cm above the lab board, pointing straight down. It streams video to the laptop so Bench can see where parts are and draw "look here" highlights on the screen. <b>It doesn't measure anything.</b><div class="mf">Made from: a teammate's phone + a DIY stand</div></div>
+<div class="role"><div class="t"><span class="n">1</span>Phone camera</div><div class="as">= ALTA's eyes</div>Held about 25 cm above the lab board, pointing straight down. It streams video to the laptop so ALTA can see where parts are and draw "look here" highlights on the screen. <b>It doesn't measure anything.</b><div class="mf">Made from: a teammate's phone + a DIY stand</div></div>
 <div class="role"><div class="t"><span class="n">2</span>Lab breadboard</div><div class="as">= the student's workbench</div>The circuit the student builds from the lab manual. It's taped down so the camera's view of it never shifts, which keeps the screen highlights lined up.<div class="mf">Made from: 830-pt breadboard (store) + starter-kit parts</div></div>
-<div class="role"><div class="t"><span class="n">3</span>Probe pod</div><div class="as">= a multimeter Bench can read for itself</div>An Arduino that measures the voltage on 4 wires about 20 times a second and sends the numbers to the laptop. It also has the <b>talk button</b> and a <b>status light</b>.<div class="mf">Made from: Uno R3 + kit breadboard, in one 3D-printed dock</div></div>
-<div class="role"><div class="t"><span class="n">4</span>Probe wires</div><div class="as">= the multimeter's tips</div>Four colored wires. When Bench says "put the yellow wire in row 10," the student plugs it in there and the pod reads that row's voltage.<div class="mf">Made from: kit jumper wires, each through a 10 kΩ safety resistor</div></div>
+<div class="role"><div class="t"><span class="n">3</span>Probe pod</div><div class="as">= a multimeter ALTA can read for itself</div>An Arduino that measures the voltage on 4 wires about 20 times a second and sends the numbers to the laptop. It also has the <b>talk button</b> and a <b>status light</b>.<div class="mf">Made from: Uno R3 + kit breadboard, in one 3D-printed dock</div></div>
+<div class="role"><div class="t"><span class="n">4</span>Probe wires</div><div class="as">= the multimeter's tips</div>Four colored wires. When ALTA says "put the yellow wire in row 10," the student plugs it in there and the pod reads that row's voltage.<div class="mf">Made from: kit jumper wires, each through a 10 kΩ safety resistor</div></div>
 <div class="role"><div class="t"><span class="n">5</span>Power wires</div><div class="as">= the bench power supply</div>A red and a black wire carry the pod's 5 V and ground to the lab board's rails. The circuit can't go above 5 V, and the pod always shares the circuit's ground, so its readings are correct.<div class="mf">Made from: 2 jumper wires</div></div>
-<div class="role"><div class="t"><span class="n">6</span>Laptop</div><div class="as">= Bench's brain, voice and whiteboard</div>Runs all the software. It takes in the camera feed and probe numbers, asks Claude what to do next, speaks through Cartesia, and shows the live feed with highlights, the manual and the readings.<div class="mf">Made from: your laptop (mic + speaker built in)</div></div>
+<div class="role"><div class="t"><span class="n">6</span>Laptop</div><div class="as">= ALTA's brain, voice and whiteboard</div>Runs all the software. It takes in the camera feed and probe numbers, asks Claude what to do next, speaks through Cartesia, and shows the live feed with highlights, the manual and the readings.<div class="mf">Made from: your laptop (mic + speaker built in)</div></div>
 </div>
 </section>
 
@@ -107,7 +107,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
 <div class="k">Faults to set up</div><ul>
 <li><b>220 Ω instead of 10 kΩ</b>: the output barely moves when the light changes</li>
 <li><b>Output wire on the wrong row</b>: it reads a fixed 0 or 5 V</li>
-<li><b>Live moment</b>: the student covers the sensor and the on-screen gauge moves. Bench asks, "why did it go up?"</li></ul></div>
+<li><b>Live moment</b>: the student covers the sensor and the on-screen gauge moves. ALTA asks, "why did it go up?"</li></ul></div>
 <div class="lab"><div class="t">Lab 3 · IR receiver <span class="pill check">Stretch</span></div>
 <div class="k">Parts</div>IR receiver, remote, LED + 220 Ω
 <div class="k">Why it matters</div>It's the closest match to the ENGR 10 IR board Aadi TAs. The output sits near 5 V and flickers low when the remote is pressed, and the pod can see that flicker.
@@ -216,7 +216,7 @@ probes.forEach(([nm,c],i)=>{const y=70+i*25;
  el('line',{x1:300,y1:y,x2:470,y2:y,stroke:c,'stroke-width':3.5});
  el('circle',{cx:474,cy:y,r:4,fill:c,stroke:fg,'stroke-width':.8});
  el('text',{x:486,y:y+4,'font-size':12,fill:fg},`${nm} probe`);});
-el('text',{x:280,y:60,'font-size':10,fill:mu,'text-anchor':'middle'},'10 kΩ safety resistor');el('text',{x:486,y:52,'font-size':10,fill:mu},'→ plugged into whatever row Bench asks');
+el('text',{x:280,y:60,'font-size':10,fill:mu,'text-anchor':'middle'},'10 kΩ safety resistor');el('text',{x:486,y:52,'font-size':10,fill:mu},'→ plugged into whatever row ALTA asks');
 // button
 el('line',{x1:170,y1:185,x2:260,y2:185,stroke:mu,'stroke-width':1.5});
 el('circle',{cx:275,cy:185,r:9,fill:'var(--destructive)',stroke:fg});

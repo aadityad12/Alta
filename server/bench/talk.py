@@ -1,4 +1,4 @@
-"""Talk to Bench out loud, with no pod and no screen: the real mic, Cartesia speech-to-text, Claude, Cartesia
+"""Talk to ALTA out loud, with no pod and no screen: the real mic, Cartesia speech-to-text, Claude, Cartesia
 voice and probe monitor, with the mock pod's voltages standing in for the board.
 
     cd server
@@ -6,14 +6,14 @@ voice and probe monitor, with the mock pod's voltages standing in for the board.
     uv run python -m bench.talk --model claude-opus-5-5           # judge it on the demo model
     uv run python -m bench.talk --lab lab2-light --fault wrong_resistor_220
 
-Enter = the talk button: press Enter, speak, press Enter again. Pressing it while Bench talks cuts it off.
+Enter = the talk button: press Enter, speak, press Enter again. Pressing it while ALTA talks cuts it off.
 You are also the student's hands on the board (type, then Enter):
     Y 10c          plug the yellow probe into hole 10c (B, G, W too)    unplug Y
     fix            fix the staged fault                                  fault <id>   stage another
     light 0 / 1    cover the light sensor / shine a light on it (Lab 2)  light 0.5    room light
     probes         what each probe reads                                 reset        new student
-    say <text>     type to Bench instead of talking                      quit
-Probes start unplugged, so put them where Bench asks: it reacts by itself once a reading settles.
+    say <text>     type to ALTA instead of talking                      quit
+Probes start unplugged, so put them where ALTA asks: it reacts by itself once a reading settles.
 """
 
 import argparse
@@ -69,7 +69,7 @@ async def run(args) -> int:
                                                     "hi": [x[2] for x in r], "vcc": mock_pod.VCC_MV, "btn": 0}))
             await asyncio.sleep(mock_pod.TICK_S)
 
-    # ---- what you see: the conversation, Bench's tool calls, and timing ----
+    # ---- what you see: the conversation, ALTA's tool calls, and timing ----
     released = [0.0]
     real_broadcast = bench.session.broadcast
 
@@ -91,7 +91,7 @@ async def run(args) -> int:
         elif kind == "stt" and released[0]:
             out(f"{DIM}  (heard you in {fields['ms'] / 1000:.2f} s){RESET}")
         elif kind == "first_audio" and released[0]:
-            out(f"{DIM}  (Bench started talking {time.monotonic() - released[0]:.2f} s after you let go){RESET}")
+            out(f"{DIM}  (ALTA started talking {time.monotonic() - released[0]:.2f} s after you let go){RESET}")
             released[0] = 0.0
         elif kind == "monitor":
             out(f"{YELLOW}  [probe monitor] {fields['text']}{RESET}")
@@ -121,7 +121,7 @@ async def run(args) -> int:
     tasks = [asyncio.create_task(c) for c in (bench.run(), agent.run(), Monitor(bench).run(), sampler(),
                                               agent.keep_warm())]
     fault = next(f for f in lab.data["faults"] if f["id"] == args.fault)
-    out(f"{BOLD}Bench, out loud{RESET} · {lab.data.get('title')} · staged fault: {fault['name']}"
+    out(f"{BOLD}ALTA, out loud{RESET} · {lab.data.get('title')} · staged fault: {fault['name']}"
         f" · model {agent.model}")
     out(f"{DIM}Enter = talk button (press, speak, press again). Board: Y 10c · unplug Y · fix · light 0/1 · "
         f"probes · say <text> · reset · quit{RESET}")
@@ -136,7 +136,7 @@ async def run(args) -> int:
                 talking = not talking
                 if talking and bench.session.state not in (State.idle, State.speaking, State.error):
                     talking = False
-                    out(f"{DIM}  (Bench is {bench.session.state.value}; wait a moment){RESET}")
+                    out(f"{DIM}  (ALTA is {bench.session.state.value}; wait a moment){RESET}")
                     continue
                 bench.bus.publish(Event(ev.PTT, talking))
                 continue
@@ -182,7 +182,7 @@ async def run(args) -> int:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(prog="bench.talk", description="Talk to Bench out loud, with the mock pod.")
+    p = argparse.ArgumentParser(prog="bench.talk", description="Talk to ALTA out loud, with the mock pod.")
     p.add_argument("--lab", default="lab1-led")
     p.add_argument("--fault", default="led_reversed")
     p.add_argument("--model", default=None, help="default: BENCH_MODEL from .env")

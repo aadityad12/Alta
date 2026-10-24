@@ -15,7 +15,7 @@ In this lab you'll build a light sensor on a breadboard: a photoresistor and a 1
 | R1 | Resistor | 10 kΩ | Color bands: brown, black, orange |
 | W2 | Jumper wire | — | Black |
 
-**Equipment:** 830-point breadboard (you'll use rows 25–35), the Bench probe pod, and a phone flashlight. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
+**Equipment:** 830-point breadboard (you'll use rows 25–35), the ALTA probe pod, and a phone flashlight. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
 
 A quick breadboard reminder: the five holes in each row-half (a–e or f–j) are connected to each other. The long power rails along the edge usually run the full length of the board, but some breadboards split each rail in the middle. If yours has a gap in the red or blue line, or you're not sure, check with your instructor or probe both ends of the rail before you start.
 

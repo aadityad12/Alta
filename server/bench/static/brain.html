@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Bench · Brain view</title>
+<title>ALTA · Brain view</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root {
@@ -60,7 +60,7 @@
 </head>
 <body>
 <header>
-  <h1>Bench · Brain view</h1>
+  <h1>ALTA · Brain view</h1>
   <span id="state" class="badge">connecting…</span>
   <span id="model" class="sub"></span>
   <span class="spacer"></span>
@@ -71,9 +71,9 @@
 <main>
   <section>
     <div class="card">
-      <h2>The breadboard, as Bench points at it</h2>
+      <h2>The breadboard, as ALTA points at it</h2>
       <svg id="board" viewBox="0 0 900 380"></svg>
-      <div class="note" id="boardnote">Parts are drawn from the lab definition (how the manual says to build it). Bench's
+      <div class="note" id="boardnote">Parts are drawn from the lab definition (how the manual says to build it). ALTA's
         highlights and probe requests appear live. Dots = where the probes actually are.</div>
       <div id="controls" class="row" style="margin-top:10px; display:none">
         <span class="note">Student's hands:</span>
@@ -100,7 +100,7 @@
       <h2>Camera</h2>
       <div class="row" style="margin-bottom:8px">
         <select id="sample"></select>
-        <label class="note"><input type="checkbox" id="sendphoto"> Answer Bench's camera requests with this photo</label>
+        <label class="note"><input type="checkbox" id="sendphoto"> Answer ALTA's camera requests with this photo</label>
       </div>
       <img id="photo" alt="">
       <div class="note" style="margin-top:6px">Sample overhead footage (#34), not the live board: the live camera and its row/column
@@ -113,7 +113,7 @@
     <div class="card">
       <button id="talk">Hold to talk (or hold Space)</button>
       <div class="row" style="margin-top:8px">
-        <input id="text" type="text" placeholder="…or type to Bench and press Enter" style="flex:1">
+        <input id="text" type="text" placeholder="…or type to ALTA and press Enter" style="flex:1">
       </div>
     </div>
 
@@ -124,7 +124,7 @@
 
     <div class="card">
       <h2>What Claude sees, step by step</h2>
-      <div class="feed" id="feed"><div class="note">Talk to Bench and every input Claude gets shows up here.</div></div>
+      <div class="feed" id="feed"><div class="note">Talk to ALTA and every input Claude gets shows up here.</div></div>
       <details style="margin-top:8px"><summary class="note">…plus, every turn: the system prompt (persona, teaching rules, the lab's answer key)</summary>
         <pre id="system">loading…</pre></details>
     </div>
@@ -318,7 +318,7 @@ function onBrain(m) {
     case "tool": feed(m.error ? "tool error" : "Claude calls", m.error ? "err" : "tool",
         `<b>${esc(m.name)}</b> ${esc(JSON.stringify(m.input))}<pre>→ ${esc(pretty(m.result))}</pre>`); break;
     case "claude": feed("Claude", "time", `answered in ${(m.ms / 1000).toFixed(2)} s (first token ${m.ttft_ms != null ? (m.ttft_ms / 1000).toFixed(2) : "–"} s) · ${m.cache_read ?? 0} tokens from cache · ${m.output} out`); break;
-    case "turn_end": feed("Bench says", "reply", m.silent ? "<i>(nothing: stays silent)</i>" : `“${esc(m.reply)}”`); break;
+    case "turn_end": feed("ALTA says", "reply", m.silent ? "<i>(nothing: stays silent)</i>" : `“${esc(m.reply)}”`); break;
     case "monitor": feed("probe monitor", "monitor", esc(m.text)); break;
     case "filler": feed("voice", "time", "filler line while Claude thinks"); break;
     case "first_audio": feed("voice", "time", `Cartesia's first audio ${m.ms} ms after the text`); break;
@@ -392,7 +392,7 @@ async function loadSamples() {
   if (names.length) $("photo").src = `/brain/samples/${names[0]}`;
 }
 async function sendFrame(id) {
-  if (!$("sendphoto").checked) return;  // no answer: Bench is told the camera didn't respond, and uses the probes
+  if (!$("sendphoto").checked) return;  // no answer: ALTA is told the camera didn't respond, and uses the probes
   const img = $("photo"); await img.decode();
   const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
   const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
@@ -400,7 +400,7 @@ async function sendFrame(id) {
   const b64 = c.toDataURL("image/jpeg", 0.85).split(",")[1];
   send({type: "frame", id, jpeg_b64: b64, w: c.width, h: c.height});
   $("cam").classList.add("looked"); setTimeout(() => $("cam").classList.remove("looked"), 2500);
-  feed("camera", "tool", `sent this photo to Bench (${c.width}×${c.height})`);
+  feed("camera", "tool", `sent this photo to ALTA (${c.width}×${c.height})`);
 }
 
 // ---------- start ----------

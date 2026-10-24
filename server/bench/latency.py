@@ -9,7 +9,7 @@ Every stage is the real one except the hardware: the student's line is spoken by
 WAV (the mic), transcribed by Cartesia (#18), answered by the agent against the mock pod's voltages (#9),
 and spoken by Cartesia (#19) into a player that only notes when the first audio arrives (+ the 26 ms the
 real output device adds). The student is the one from bench.scenarios: it plugs probes where asked, answers
-what it sees, and fixes the fault once Bench points at it.
+what it sees, and fixes the fault once ALTA points at it.
 """
 
 import argparse

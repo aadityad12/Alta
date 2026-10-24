@@ -1,4 +1,4 @@
-// Bench probe pod firmware. Protocol: docs/CONTRACTS.md §2–3 (source of truth: issue #2).
+// ALTA probe pod firmware. Protocol: docs/CONTRACTS.md §2–3 (source of truth: issue #2).
 //
 // Every 50 ms: snapshot the ADC window stats for A0..A3, convert to mV against the measured
 // supply, print one sample line. Everything slow (ADC, serial out, 1 ms tick) runs on

@@ -1,4 +1,4 @@
-# Bench probe pod firmware (bare-metal C, ATmega328P / Arduino Uno).
+# ALTA probe pod firmware (bare-metal C, ATmega328P / Arduino Uno).
 #
 #   make                 build build/cc/bench.hex (build/ca/… with LED=ca)
 #   make flash           flash it (auto-detects the Uno; or PORT=/dev/cu.usbmodemXXXX)

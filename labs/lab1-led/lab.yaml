@@ -1,4 +1,4 @@
-# Lab 1 · Light an LED — Bench's answer key for this lab.
+# Lab 1 · Light an LED — ALTA's answer key for this lab.
 # Schema: docs/CONTRACTS.md §6 (issue #2). Hole strings: §4.
 # Lives in rows 5–15 of the lab breadboard; Lab 2 shares the same board in rows 25–35.
 #
@@ -38,7 +38,7 @@ steps:
 
 # readings = what each net reads with the fault staged (every net listed).
 # Note: led_reversed and led_leg_off_by_one read the same on every net. The probes
-# can't tell them apart, so Bench has to look at the board (look_at_board) or
+# can't tell them apart, so ALTA has to look at the board (look_at_board) or
 # probe row 11.
 faults:
   - id: led_reversed
