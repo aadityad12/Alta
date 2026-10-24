@@ -23,9 +23,11 @@ log = logging.getLogger(__name__)
 BAUD = 115200
 AUTODETECT = ["/dev/cu.usbmodem*", "/dev/cu.usbserial*", "/dev/cu.wchusbserial*", "/dev/ttyACM*", "/dev/ttyUSB*"]
 HELLO_TIMEOUT_S = 3.0  # opening the port resets the Uno; it says hello when it's booted
-SILENCE_S = 1.0        # the pod sends 20 lines a second, so this much quiet means it's gone
+SILENCE_S = 2.0        # 20 lines a second, so this much quiet means it's gone. Over the Uno's ~1 s reboot
+                       # (brown-out), so we ride it out instead of reopening the port, which resets it again.
 RETRY_S = 0.5          # retry this often while the pod is missing (recovers well inside 2 s)
 OFF = {"off", "none", "0"}
+LED_COMMANDS = {"LED IDLE", "LED LISTEN", "LED THINK", "LED SPEAK", "LED ERROR"}  # CONTRACTS §3
 
 
 class PodBridge:
@@ -57,7 +59,7 @@ class PodBridge:
 
     async def send(self, cmd: str) -> None:
         """Send a command line (`LED THINK`, `PING`, …). LED commands are remembered and replayed on reconnect."""
-        if cmd.startswith("LED "):
+        if cmd in LED_COMMANDS:
             self._last_led = cmd
         if self.connected:
             await asyncio.to_thread(self._write, cmd)

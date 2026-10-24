@@ -118,6 +118,37 @@ def test_unplug_and_replug_recovers_within_2s(pod):
         assert poll(lambda: "LED IDLE" in pod.commands[n:])  # LED back in step with Bench
 
 
+def test_a_short_brown_out_is_ridden_out(pod):
+    """A real Uno is quiet for ~1 s when it reboots. Reopening the port would reset it a second time."""
+    pod.plug()
+    with app_for(pod.link) as c, c.websocket_connect("/ws") as ws:
+        inbox = Inbox(ws)
+        bridge = c.app.state.pod
+        assert poll(lambda: bridge.connected)
+        pod.paused = True
+        time.sleep(1.2)
+        assert bridge.connected
+        pod.paused = False
+        inbox.wait_for(lambda m: m["type"] == "probes")
+        with pytest.raises(AssertionError):
+            inbox.state("error", timeout=0.3)
+
+
+def test_only_valid_led_commands_are_replayed(pod):
+    pod.plug()
+    with app_for(pod.link) as c:
+        bridge = c.app.state.pod
+        assert poll(lambda: bridge.connected)
+        pod.unplug()
+        assert poll(lambda: not bridge.connected, timeout=3.0)
+        c.portal.call(bridge.send, "LED NOPE")  # after the hub's LED ERROR, so it would be the one replayed
+        n = len(pod.commands)
+        pod.plug()
+        assert poll(lambda: bridge.connected)
+        assert poll(lambda: "LED IDLE" in pod.commands[n:])  # replayed, then back to idle with Bench
+        assert "LED NOPE" not in pod.commands[n:]
+
+
 def test_waits_for_hello_before_sending_commands(pod):
     pod.boot_s = 1.0  # like an Uno rebooting when the port opens
     pod.plug()
