@@ -8,6 +8,7 @@ dependencies = [
     "cartesia>=4.2.0",
     "fastapi>=0.162.0",
     "numpy>=2.5.4",
+    "pillow>=13.0.0",
     "pydantic>=2.14.1",
     "pyserial>=3.5",
     "python-dotenv>=1.2.4",

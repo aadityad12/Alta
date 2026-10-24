@@ -2,3 +2,4 @@ import os
 
 os.environ["MIC_DEVICE"] = "off"  # tests never open the real microphone (bench.main reads it per app)
 os.environ["SPEAKER_DEVICE"] = "off"  # ... nor the speakers
+os.environ["BENCH_FRAME_DIR"] = "off"  # ... nor write camera frames into recordings/

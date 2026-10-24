@@ -144,6 +144,7 @@ class Agent:
                 self.clear()
             gen, msgs = s.generation, self.messages
             start = len(msgs)
+            self.tools.new_turn(None if event is not None else text)
             if event is not None:
                 msgs.append({"role": "user", "content": f"[event] {event}"})
             else:

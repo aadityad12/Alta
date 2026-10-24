@@ -14,6 +14,7 @@ from .protocol import (
     PROBES,
     ErrorOut,
     ExpectOut,
+    FrameIn,
     LabOut,
     ManualOut,
     OverlayClearOut,
@@ -70,6 +71,7 @@ class Bench:
         self._probes_dirty = False
         self.voice = None  # VoiceIn (#18) when a mic is open; without one the talk button only shows listening
         self.speaker = None  # Speaker (#19) when TTS is on
+        self.frame_waiters: dict[str, asyncio.Future] = {}  # request_frame id -> the look_at_board call waiting (#20)
 
     @property
     def lab(self) -> Lab | None:
@@ -135,7 +137,11 @@ class Bench:
             await self.reset()
         elif isinstance(msg, PttIn):
             self.bus.publish(Event(ev.PTT, msg.down))  # same path as the pod's talk button
-        # hello / text / frame are for the agent consumers (#17, #20)
+        elif isinstance(msg, FrameIn):
+            waiter = self.frame_waiters.get(msg.id)
+            if waiter and not waiter.done():
+                waiter.set_result(msg)
+        # hello / text are for the agent (#17)
 
     async def _handle_ptt(self, down: bool) -> None:
         s = self.session
