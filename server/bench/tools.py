@@ -4,11 +4,17 @@ Every tool validates its input against the current lab and returns (text, is_err
 reaches the UI; Claude gets a clear error back instead and can try again.
 """
 
+import asyncio
+import base64
+import io
+import itertools
 import json
 import logging
+import os
 import re
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
@@ -20,10 +26,18 @@ from .protocol import (
     OverlayClearOut,
     OverlayItem,
     OverlayOut,
+    RequestFrameOut,
     SchematicOut,
 )
 
 log = logging.getLogger(__name__)
+
+FRAME_TIMEOUT_S = 2.0
+FRAME_MAX_PX = 1280  # long side; plenty for row numbers, and cheaper and faster than the model's 2576 px limit
+FRAMES_PER_TURN = 1
+FRAMES_WHEN_ASKED = 3  # the student asked Bench to look
+_ASKED_TO_LOOK = re.compile(r"\b(look|looking|see|camera|photo|picture|watch)\b", re.I)
+FRAME_DIR = Path(__file__).resolve().parents[2] / "recordings" / "frames"
 
 # ---------- breadboard coordinates (CONTRACTS §4) ----------
 
@@ -123,7 +137,11 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "look_at_board",
-        "description": "Get a camera photo of the breadboard with row numbers drawn on it. Probes beat the camera.",
+        "description": (
+            "Get a camera photo of the breadboard with row numbers and column letters drawn on it. Good for where "
+            "things are (is a part in row 10, which way round is the LED, is a wire in the rail). Probes beat the "
+            "camera. Once per turn, unless the student asked you to look."
+        ),
         "input_schema": _obj({}, []),
     },
     {
@@ -172,6 +190,15 @@ class ToolBox:
     def __init__(self, bench, pod_connected: Callable[[], bool] | None = None) -> None:
         self.bench = bench
         self.pod_connected = pod_connected or (lambda: False)
+        self.frames_left = FRAMES_PER_TURN
+        self._frame_ids = itertools.count(1)
+        env_dir = os.environ.get("BENCH_FRAME_DIR", "").strip()
+        self.frame_dir: Path | None = None if env_dir.lower() in ("off", "none", "0") else Path(env_dir or FRAME_DIR)
+
+    def new_turn(self, student_text: str | None) -> None:
+        """Called at the start of every agent turn: resets the camera budget (#20)."""
+        asked = bool(student_text and _ASKED_TO_LOOK.search(student_text))
+        self.frames_left = FRAMES_WHEN_ASKED if asked else FRAMES_PER_TURN
 
     @property
     def lab(self) -> dict[str, Any]:
@@ -180,7 +207,7 @@ class ToolBox:
             raise ToolError("no lab is loaded")
         return lab.data
 
-    async def run(self, name: str, args: Any) -> tuple[str, bool]:
+    async def run(self, name: str, args: Any) -> tuple[str | list[dict], bool]:
         if name not in TOOL_NAMES:
             return f"unknown tool {name!r}", True
         if not isinstance(args, dict):
@@ -192,6 +219,8 @@ class ToolBox:
         except Exception as e:  # a bug in a tool must not kill the turn
             log.exception("tool %s crashed", name)
             return f"internal error in {name}: {e}", True
+        if isinstance(result, list):  # content blocks (look_at_board's image)
+            return result, False
         return result if isinstance(result, str) else json.dumps(result), False
 
     # -- tools --
@@ -293,8 +322,48 @@ class ToolBox:
         await self.bench.hub.broadcast(SchematicOut(nets=nets))
         return f"Highlighted nets: {', '.join(nets)}." if nets else "Cleared the schematic highlight."
 
-    async def _look_at_board(self, args: dict) -> str:
-        raise ToolError("The camera isn't connected yet. Rely on the probes, or ask the student what they see.")
+    async def _look_at_board(self, args: dict) -> list[dict]:
+        bench = self.bench
+        if not bench.hub.clients:
+            raise ToolError("The camera isn't connected (no student screen is open). Rely on the probes, or ask the "
+                            "student what they see.")
+        if self.frames_left <= 0:
+            raise ToolError("You've already looked at the board this turn. Use what you saw, or measure with a probe.")
+        self.frames_left -= 1
+        frame_id = f"f{next(self._frame_ids)}"
+        waiter = asyncio.get_running_loop().create_future()
+        bench.frame_waiters[frame_id] = waiter
+        try:
+            await bench.hub.broadcast(RequestFrameOut(id=frame_id))
+            async with asyncio.timeout(FRAME_TIMEOUT_S):
+                frame = await waiter
+        except TimeoutError:
+            raise ToolError(f"The camera didn't send a photo within {FRAME_TIMEOUT_S:.0f} s. Rely on the probes, or "
+                            "ask the student what they see.") from None
+        finally:
+            bench.frame_waiters.pop(frame_id, None)
+        try:
+            jpeg, w, h = _downscale(base64.b64decode(frame.jpeg_b64, validate=True))
+        except Exception as e:
+            log.warning("look_at_board: bad frame %s: %r", frame_id, e)
+            raise ToolError("The camera sent a photo that couldn't be read. Rely on the probes.") from None
+        self._save_frame(frame_id, jpeg)
+        log.info("look_at_board: %s, %dx%d, %d KB", frame_id, w, h, len(jpeg) // 1024)
+        return [
+            {"type": "text", "text": f"Camera photo of the board ({w}x{h}), with row numbers and column letters drawn "
+                                     "on it. Use it for where things are; trust the probes for voltages."},
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                         "data": base64.b64encode(jpeg).decode()}},
+        ]
+
+    def _save_frame(self, frame_id: str, jpeg: bytes) -> None:
+        if self.frame_dir is None:
+            return
+        try:
+            self.frame_dir.mkdir(parents=True, exist_ok=True)
+            (self.frame_dir / f"{time.strftime('%Y%m%d-%H%M%S')}-{frame_id}.jpg").write_bytes(jpeg)
+        except OSError as e:
+            log.warning("couldn't save frame: %r", e)
 
     async def _record_diagnosis(self, args: dict) -> str:
         fault_id = args.get("fault_id")
@@ -320,3 +389,18 @@ class ToolBox:
                 return net
         ids = [n.get("id") for n in self.lab.get("nets", [])]
         raise ToolError(f"unknown net {net_id!r}; nets are {', '.join(ids)}")
+
+
+def _downscale(data: bytes) -> tuple[bytes, int, int]:
+    """Any image the browser sent -> a JPEG at most FRAME_MAX_PX on the long side. Returns (jpeg, w, h)."""
+    from PIL import Image
+
+    img = Image.open(io.BytesIO(data))
+    img.load()
+    if max(img.size) <= FRAME_MAX_PX and img.format == "JPEG":
+        return data, img.width, img.height
+    img = img.convert("RGB")
+    img.thumbnail((FRAME_MAX_PX, FRAME_MAX_PX), Image.LANCZOS)
+    out = io.BytesIO()
+    img.save(out, "JPEG", quality=85)
+    return out.getvalue(), img.width, img.height

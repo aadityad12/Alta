@@ -62,7 +62,8 @@ async def run(args) -> int:
     def on_tool(name, args_, result, is_error):
         mark = f"{RED}✗{RESET}" if is_error else "·"
         print(f"  {mark} {CYAN}{name}{RESET} {json.dumps(args_, ensure_ascii=False)}")
-        print(f"    {DIM}→ {result[:300]}{RESET}")
+        shown = result if isinstance(result, str) else " + ".join(b["type"] for b in result)  # image blocks
+        print(f"    {DIM}→ {shown[:300]}{RESET}")
 
     async def speak(text):
         s = bench.session
