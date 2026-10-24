@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
 from . import bus as ev
+from . import ta
 from .agent import Agent
 from .brain import MockBoard, mount
 from .bus import Event
@@ -138,6 +139,8 @@ def create_app(
     app = FastAPI(title="ALTA", lifespan=lifespan)
     board = MockBoard(bench, labs_dir) if mock_board else None
     app.state.brain = mount(app, bench, agent, board)  # dev page: /brain
+    app.state.ta = ta.Room(bench)
+    ta.mount(app, app.state.ta)  # TA dashboard: /ta (#24)
     app.state.bench = bench
     app.state.pod = pod
     app.state.agent = agent

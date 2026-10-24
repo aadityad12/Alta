@@ -1,0 +1,37 @@
+{"t": 0.0, "kind": "session", "lab": "lab2-light", "fault": "parts_swapped"}
+{"t": 0.018, "kind": "turn", "source": "student"}
+{"t": 0.018, "kind": "state", "value": "thinking"}
+{"t": 1.355, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "30c"}}
+{"t": 1.355, "kind": "state", "value": "speaking"}
+{"t": 1.355, "kind": "state", "value": "idle"}
+{"t": 1.358, "kind": "turn", "source": "event"}
+{"t": 1.358, "kind": "state", "value": "thinking"}
+{"t": 2.93, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "parts_swapped", "confidence": 0.7, "hint_level": 2, "resolved": false}}
+{"t": 3.968, "kind": "state", "value": "speaking"}
+{"t": 3.968, "kind": "state", "value": "idle"}
+{"t": 3.97, "kind": "turn", "source": "event"}
+{"t": 3.971, "kind": "state", "value": "thinking"}
+{"t": 4.98, "kind": "state", "value": "speaking"}
+{"t": 4.98, "kind": "state", "value": "idle"}
+{"t": 4.983, "kind": "turn", "source": "student"}
+{"t": 4.983, "kind": "state", "value": "thinking"}
+{"t": 6.098, "kind": "state", "value": "speaking"}
+{"t": 6.098, "kind": "state", "value": "idle"}
+{"t": 6.1, "kind": "turn", "source": "student"}
+{"t": 6.1, "kind": "state", "value": "thinking"}
+{"t": 7.92, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "parts_swapped", "confidence": 0.8, "hint_level": 3, "resolved": false}}
+{"t": 7.921, "kind": "state", "value": "speaking"}
+{"t": 7.921, "kind": "state", "value": "idle"}
+{"t": 7.925, "kind": "turn", "source": "event"}
+{"t": 7.925, "kind": "state", "value": "thinking"}
+{"t": 8.988, "kind": "state", "value": "speaking"}
+{"t": 8.988, "kind": "state", "value": "idle"}
+{"t": 11.299, "kind": "turn", "source": "student"}
+{"t": 11.299, "kind": "state", "value": "thinking"}
+{"t": 12.336, "kind": "state", "value": "speaking"}
+{"t": 12.336, "kind": "state", "value": "idle"}
+{"t": 12.338, "kind": "turn", "source": "event"}
+{"t": 12.338, "kind": "state", "value": "thinking"}
+{"t": 14.188, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "parts_swapped", "confidence": 0.9, "hint_level": 3, "resolved": true}}
+{"t": 14.188, "kind": "state", "value": "speaking"}
+{"t": 14.188, "kind": "state", "value": "idle"}

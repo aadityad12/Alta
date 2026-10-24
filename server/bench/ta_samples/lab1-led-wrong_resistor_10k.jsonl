@@ -1,0 +1,21 @@
+{"t": 0.0, "kind": "session", "lab": "lab1-led", "fault": "wrong_resistor_10k"}
+{"t": 0.005, "kind": "turn", "source": "student"}
+{"t": 0.005, "kind": "state", "value": "thinking"}
+{"t": 1.646, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "10c"}}
+{"t": 1.646, "kind": "state", "value": "speaking"}
+{"t": 1.646, "kind": "state", "value": "idle"}
+{"t": 1.647, "kind": "turn", "source": "event"}
+{"t": 1.647, "kind": "state", "value": "thinking"}
+{"t": 3.223, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "wrong_resistor_10k", "confidence": 0.7, "hint_level": 2, "resolved": false}}
+{"t": 3.223, "kind": "state", "value": "speaking"}
+{"t": 3.223, "kind": "state", "value": "idle"}
+{"t": 4.14, "kind": "turn", "source": "student"}
+{"t": 4.14, "kind": "state", "value": "thinking"}
+{"t": 5.802, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "wrong_resistor_10k", "confidence": 0.75, "hint_level": 3, "resolved": false}}
+{"t": 5.802, "kind": "state", "value": "speaking"}
+{"t": 5.802, "kind": "state", "value": "idle"}
+{"t": 5.803, "kind": "turn", "source": "event"}
+{"t": 5.803, "kind": "state", "value": "thinking"}
+{"t": 7.282, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "wrong_resistor_10k", "confidence": 0.9, "hint_level": 3, "resolved": true}}
+{"t": 8.507, "kind": "state", "value": "speaking"}
+{"t": 8.507, "kind": "state", "value": "idle"}

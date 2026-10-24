@@ -1,0 +1,32 @@
+{"t": 0.0, "kind": "session", "lab": "lab1-led", "fault": "led_reversed"}
+{"t": 0.007, "kind": "turn", "source": "student"}
+{"t": 0.007, "kind": "state", "value": "thinking"}
+{"t": 1.511, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "10c"}}
+{"t": 1.512, "kind": "state", "value": "speaking"}
+{"t": 1.512, "kind": "state", "value": "idle"}
+{"t": 1.514, "kind": "turn", "source": "event"}
+{"t": 1.514, "kind": "state", "value": "thinking"}
+{"t": 2.742, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "B", "at": "13c"}}
+{"t": 2.742, "kind": "state", "value": "speaking"}
+{"t": 2.743, "kind": "state", "value": "idle"}
+{"t": 2.745, "kind": "turn", "source": "event"}
+{"t": 2.745, "kind": "state", "value": "thinking"}
+{"t": 4.745, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "unknown", "confidence": 0.5, "hint_level": 2, "resolved": false}}
+{"t": 4.745, "kind": "state", "value": "speaking"}
+{"t": 4.745, "kind": "state", "value": "idle"}
+{"t": 6.276, "kind": "turn", "source": "student"}
+{"t": 6.276, "kind": "state", "value": "thinking"}
+{"t": 7.692, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "led_reversed", "confidence": 0.9, "hint_level": 2, "resolved": false}}
+{"t": 7.692, "kind": "tool", "name": "show_manual_step", "input": {"step": 3}}
+{"t": 7.692, "kind": "state", "value": "speaking"}
+{"t": 7.693, "kind": "state", "value": "idle"}
+{"t": 9.423, "kind": "turn", "source": "student"}
+{"t": 9.423, "kind": "state", "value": "thinking"}
+{"t": 11.259, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "led_reversed", "confidence": 0.9, "hint_level": 3, "resolved": false}}
+{"t": 11.259, "kind": "state", "value": "speaking"}
+{"t": 11.259, "kind": "state", "value": "idle"}
+{"t": 11.262, "kind": "turn", "source": "event"}
+{"t": 11.263, "kind": "state", "value": "thinking"}
+{"t": 13.033, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "led_reversed", "confidence": 0.97, "hint_level": 3, "resolved": true}}
+{"t": 13.033, "kind": "state", "value": "speaking"}
+{"t": 13.033, "kind": "state", "value": "idle"}

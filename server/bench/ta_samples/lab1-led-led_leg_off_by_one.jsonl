@@ -1,0 +1,26 @@
+{"t": 0.0, "kind": "session", "lab": "lab1-led", "fault": "led_leg_off_by_one"}
+{"t": 0.005, "kind": "turn", "source": "student"}
+{"t": 0.005, "kind": "state", "value": "thinking"}
+{"t": 1.285, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "10:a-e"}}
+{"t": 1.285, "kind": "state", "value": "speaking"}
+{"t": 1.285, "kind": "state", "value": "idle"}
+{"t": 1.292, "kind": "turn", "source": "event"}
+{"t": 1.292, "kind": "state", "value": "thinking"}
+{"t": 3.089, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "B", "at": "13:a-e"}}
+{"t": 3.089, "kind": "state", "value": "speaking"}
+{"t": 3.089, "kind": "state", "value": "idle"}
+{"t": 3.09, "kind": "turn", "source": "event"}
+{"t": 3.09, "kind": "state", "value": "thinking"}
+{"t": 4.962, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "unknown", "confidence": 0.5, "hint_level": 2, "resolved": false}}
+{"t": 4.962, "kind": "state", "value": "speaking"}
+{"t": 4.962, "kind": "state", "value": "idle"}
+{"t": 6.87, "kind": "turn", "source": "student"}
+{"t": 6.87, "kind": "state", "value": "thinking"}
+{"t": 8.259, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "led_leg_off_by_one", "confidence": 0.85, "hint_level": 3, "resolved": false}}
+{"t": 8.259, "kind": "state", "value": "speaking"}
+{"t": 8.259, "kind": "state", "value": "idle"}
+{"t": 8.262, "kind": "turn", "source": "event"}
+{"t": 8.262, "kind": "state", "value": "thinking"}
+{"t": 9.649, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "led_leg_off_by_one", "confidence": 0.95, "hint_level": 3, "resolved": true}}
+{"t": 9.649, "kind": "state", "value": "speaking"}
+{"t": 9.649, "kind": "state", "value": "idle"}
