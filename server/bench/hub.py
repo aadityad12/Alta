@@ -68,6 +68,7 @@ class Bench:
         self.session = Session(broadcast=self.hub.broadcast)
         self.session.lab_id = next(iter(sorted(labs)), None)
         self._probes_dirty = False
+        self.voice = None  # VoiceIn (#18) when a mic is open; without one the talk button only shows listening
 
     @property
     def lab(self) -> Lab | None:
@@ -140,10 +141,15 @@ class Bench:
         if down:
             if s.state is State.error:
                 await s.set_state(State.idle)  # the student is trying again
-            if s.state in (State.idle, State.speaking):
-                await s.set_state(State.listening)
+            if s.state in (State.idle, State.speaking) and await s.set_state(State.listening) and self.voice:
+                self.voice.press()
         elif s.state is State.listening:
-            await s.set_state(State.idle)  # #18 replaces this with transcribing -> STT
+            if self.voice:
+                self.voice.release()  # -> transcribing -> the agent's turn
+            else:
+                await s.set_state(State.idle)
+        elif self.voice:
+            self.voice.cancel()
 
     async def _handle_pod_status(self, connected: bool) -> None:
         s = self.session

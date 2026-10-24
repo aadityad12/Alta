@@ -24,6 +24,8 @@ Talk to Bench by typing (no voice or browser; needs `ANTHROPIC_API_KEY` in `.env
 cd server && uv run python -m bench.cli --lab lab1-led --pod off   # or --pod /tmp/bench-pod
 ```
 
+Check the mic and speech-to-text: `cd server && uv run python -m bench.voice_in --list-devices`, then `--test 4` (records 4 s and prints the transcript). Pick a mic with `MIC_DEVICE` in `.env`.
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs
