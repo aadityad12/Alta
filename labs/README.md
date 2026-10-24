@@ -48,7 +48,7 @@ Probe points: row 6 = 5 V · row 10 = LED anode ≈ 1.9 V · row 13 = LED cathod
 
 Probe points: row 26 = 5 V · row 30 = output (room ≈ 3.5 V, covered < 1 V, flashlight ≈ 4.8 V) · row 34 = GND
 
-All values are drafts until measured on the real board (#4 verify step, then `verified: true`).
+All values are drafts until measured on the real board (#4 verify step, then `verified: true`). Measure them with `uv run labs/measure.py lab1-led` (or `lab2-light`): plug in one probe per net once, stage each state when asked, and it saves `labs/<lab>/measured.yaml` plus a table for #4.
 
 ## Scenario format (`scenarios/<fault_id>.yaml`, or `normal.yaml`)
 
