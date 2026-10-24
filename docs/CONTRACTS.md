@@ -1,4 +1,4 @@
-# Bench contracts
+# ALTA contracts
 
 > Copied from issue #2, which is the source of truth. To change anything, comment on #2 and tell the team first.
 
@@ -72,7 +72,7 @@ Unknown command → `{"err":"unknown_cmd"}`.
 |---|---|---|
 | `lab` | `lab` (lab.yaml as JSON, plus `manual_md` and `schematic_url`) | on connect and on `select_lab` |
 | `probes` | `mv[4]`, `lo[4]`, `hi[4]`, `vcc`, `btn`, `t` | throttled to 10 Hz |
-| `expect` | `probe` ("Y"…), `at` ("10c"), `expected_mv`, `tol_mv`, `label` — or `probe` + `clear: true` | Bench asked for this probe; the UI shows the expected band |
+| `expect` | `probe` ("Y"…), `at` ("10c"), `expected_mv`, `tol_mv`, `label` — or `probe` + `clear: true` | ALTA asked for this probe; the UI shows the expected band |
 | `overlay` | `mode` ("replace" or "add"), `items: OverlayItem[]` | see below |
 | `overlay_clear` | — | |
 | `manual` | `step` | scroll/highlight the manual |
@@ -138,7 +138,7 @@ The **net ids** (`n_led_anode`, …) must match the element ids in `schematic.sv
 | tool | input | what the server does |
 |---|---|---|
 | `read_probes` | `{}` | returns each probe's mV, lo/hi, unplugged flag, and the hole it was last asked to go to |
-| `ask_for_probe` | `{probe, at, expect_net?}` | highlights `at` in that probe's color, sends `expect` to the UI, remembers the request. **Bench speaks the instruction itself.** |
+| `ask_for_probe` | `{probe, at, expect_net?}` | highlights `at` in that probe's color, sends `expect` to the UI, remembers the request. **ALTA speaks the instruction itself.** |
 | `highlight` | `{items: OverlayItem[], mode}` | sends `overlay` |
 | `clear_highlights` | `{}` | sends `overlay_clear` |
 | `show_manual_step` | `{step}` | sends `manual` |
@@ -146,4 +146,4 @@ The **net ids** (`n_led_anode`, …) must match the element ids in `schematic.sv
 | `look_at_board` | `{}` | sends `request_frame`, waits ≤2 s, returns the annotated JPEG to Claude |
 | `record_diagnosis` | `{fault_id or "unknown", confidence 0–1, evidence, hint_level 1–4, resolved}` | logs it (metrics and the TA dashboard) |
 
-Bench's **spoken words are its normal text reply**, not a tool. If Bench has nothing useful to say after an event, it replies exactly `<silent>` and the server stays quiet.
+ALTA's **spoken words are its normal text reply**, not a tool. If ALTA has nothing useful to say after an event, it replies exactly `<silent>` and the server stays quiet.

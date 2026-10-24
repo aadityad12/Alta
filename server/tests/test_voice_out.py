@@ -257,6 +257,7 @@ def test_barge_in_stops_the_speaker():
     ("yellow on rail:j+", "yellow on the plus rail"),
     ("The LED 💡 is **on**", "The L E D is on"),
     ("Two LEDs", "Two L E Ds"),
+    ("Hi, I'm ALTA.", "Hi, I'm Alta."),
 ])
 def test_normalize(text, said):
     assert normalize(text) == said

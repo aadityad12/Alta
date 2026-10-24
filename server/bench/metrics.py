@@ -3,7 +3,7 @@
     cd server
     uv run python -m bench.metrics ../recordings/*.jsonl
 
-Per session: turns, probes asked for, highest hint level, the fault Bench diagnosed, time from the
+Per session: turns, probes asked for, highest hint level, the fault ALTA diagnosed, time from the
 student's first words to the confirmed fix. Then latency over every spoken turn, from button release
 to each mark (the #22 target is release -> first audio, median <= 2.5 s).
 """
@@ -122,7 +122,7 @@ def _table(head: list[str], rows: list[list[str]]) -> str:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(prog="bench.metrics", description="Summarize Bench session logs.")
+    p = argparse.ArgumentParser(prog="bench.metrics", description="Summarize ALTA session logs.")
     p.add_argument("paths", nargs="+", type=Path, help="recordings/*.jsonl")
     args = p.parse_args()
     missing = [x for x in args.paths if not x.is_file()]

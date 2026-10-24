@@ -13,7 +13,7 @@ function App() {
 
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: 32 }}>
-      <h1>Bench</h1>
+      <h1>ALTA</h1>
       <p>Server: {server}</p>
     </main>
   )

@@ -1,11 +1,11 @@
-"""Text-mode Bench: talk to the agent by typing, no voice and no browser needed.
+"""Text-mode ALTA: talk to the agent by typing, no voice and no browser needed.
 
     cd server
     uv run python -m bench.cli --lab lab1-led                  # pod auto-detected (or POD_PORT)
     uv run python -m bench.cli --lab lab1-led --pod /dev/ttys012   # the mock pod's port (#9)
     uv run python -m bench.cli --lab lab1-led --pod off        # no pod at all
 
-Type as the student. You'll see Bench's reply, every tool call it makes, and the probe readings.
+Type as the student. You'll see ALTA's reply, every tool call it makes, and the probe readings.
 Commands: /probes  /event <text>  /reset  /quit
 Needs ANTHROPIC_API_KEY in the repo's .env.
 """
@@ -76,7 +76,7 @@ async def run(args) -> int:
     agent.speak = speak
     core = asyncio.create_task(bench.run())
 
-    print(f"Bench text mode · {labs[args.lab].data.get('title', args.lab)} · model {agent.model}")
+    print(f"ALTA text mode · {labs[args.lab].data.get('title', args.lab)} · model {agent.model}")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print(f"{RED}ANTHROPIC_API_KEY is not set (put it in the repo's .env). Replies will fail.{RESET}")
     print(f"{DIM}Type as the student. /probes /event <text> /reset /quit{RESET}")
@@ -120,7 +120,7 @@ async def run(args) -> int:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(prog="bench.cli", description="Talk to Bench by typing.")
+    p = argparse.ArgumentParser(prog="bench.cli", description="Talk to ALTA by typing.")
     p.add_argument("--lab", default="lab1-led")
     p.add_argument("--pod", default=None, help="serial port, or 'off' (default: POD_PORT or auto-detect)")
     p.add_argument("--model", default=None, help="default: BENCH_MODEL or claude-opus-5-5")

@@ -1,4 +1,4 @@
-"""Brain view: a dev page at /brain that shows what Bench is doing and what Claude is given.
+"""Brain view: a dev page at /brain that shows what ALTA is doing and what Claude is given.
 
     POD_PORT=mock uv run python -m bench          # then open http://localhost:8000/brain
 
@@ -9,7 +9,7 @@ It's a student-screen stand-in until the real one exists (#28-#30), not a replac
   tool call with the result Claude got back, timings. Not part of the contract.
 - POD_PORT=mock runs the mock pod's voltage model (#9) inside the server, so you can stage a fault, fix
   it and plug probes from the page (click a hole). With a real pod those controls are hidden.
-- it can answer Bench's camera requests with a sample photo (docs/samples, #34), so look_at_board works
+- it can answer ALTA's camera requests with a sample photo (docs/samples, #34), so look_at_board works
   before the real camera + overlay engine (#11) exist. Off by default: the photo isn't the staged board.
 """
 

@@ -9,7 +9,7 @@ Numbers for the pitch, the README and Devpost. Each section says how it was meas
 
 ## Agent latency (#22)
 
-**Target: median ≤ 2.5 s from releasing the talk button to hearing Bench.** Met with Opus fast mode.
+**Target: median ≤ 2.5 s from releasing the talk button to hearing ALTA.** Met with Opus fast mode.
 
 `python -m bench.latency` runs 10 turns through the real pipeline, minus the hardware. macOS `say` speaks the student's line into a 16 kHz WAV (the mic), Cartesia transcribes it, the agent answers against the mock pod's voltages, and Cartesia speaks the reply into a player that notes when the first audio arrives, plus the real speaker's 26 ms. The student is the scripted one from the scenario tests. Lab 1, LED in backwards. Two runs of 10 turns per setting, Sat 24 Oct.
 
@@ -22,7 +22,7 @@ From button release, seconds (median / p90):
 | Opus 5.5 low, normal, run 1 | 0.27 / 0.29 | 2.01 / 3.61 | 2.36 / 3.77 | 1.91 / 2.20 | 7 / 10 |
 | Opus 5.5 low, normal, run 2 | 0.24 / 0.35 | 2.51 / 3.78 | 2.97 / 3.94 | 1.94 / 2.27 | 7 / 10 |
 
-"Reply audio" is the first sound of Bench's actual answer. "First audio" includes the filler ("Mm, let me check."), which plays when a student turn has no text after 1.5 s. With the filler, nobody waits more than about 2.3 s in silence in either setting.
+"Reply audio" is the first sound of ALTA's actual answer. "First audio" includes the filler ("Mm, let me check."), which plays when a student turn has no text after 1.5 s. With the filler, nobody waits more than about 2.3 s in silence in either setting.
 
 **What made the difference: speak first.** Before #22, a typical turn was two Claude requests in a row. The first one thinks and calls `ask_for_probe` / `record_diagnosis` (median 2.7 s, 206 requests). Only the second one writes the reply (median 1.8 s, 186 requests). So Claude's first spoken word came ~4.7 s after the turn started. Now Claude writes the reply first and the tool calls after it, in the same response. The text goes to TTS as it streams, and when every call in the round is a side effect (highlights, `ask_for_probe`, `record_diagnosis`), the turn ends with no second request. Turn start → first Claude text, scenario runs (≈120 turns each):
 
@@ -57,7 +57,7 @@ Same 7 scenarios × 3 runs (below), same prompt, effort `low`. Columns: runs tha
 
 `python -m bench.scenarios` runs the real agent against every fault in Lab 1 and Lab 2, with a scripted student, the mock pod's voltage model, and the probe monitor on a simulated clock.
 
-The student opens with the fault's symptom, plugs probes where Bench asks, and covers the sensor or shines a light on it when asked. It answers what-do-you-see questions ("which row is the long leg in?") from the fault's `how_to_stage`, using `claude-haiku-5-5`. It fixes the fault once Bench points at it (hint level 3). Otherwise it escalates through canned lines, ending with asking for the answer twice.
+The student opens with the fault's symptom, plugs probes where ALTA asks, and covers the sensor or shines a light on it when asked. It answers what-do-you-see questions ("which row is the long leg in?") from the fault's `how_to_stage`, using `claude-haiku-5-5`. It fixes the fault once ALTA points at it (hint level 3). Otherwise it escalates through canned lines, ending with asking for the answer twice.
 
 Rules checked on every run:
 1. **Measure first:** no fault named before a probe reading (from `record_diagnosis`, and in words by the grader).
@@ -80,13 +80,13 @@ Final run, Opus 5.5 low, fast mode, 3 runs per fault:
 Standard Opus (not fast): 18 / 21 runs, 7 / 7 scenarios.
 
 **Headline numbers (42 final runs, both settings):**
-- Bench named the right fault in **42 / 42** runs and confirmed the fix with a measurement in **41 / 42**.
+- ALTA named the right fault in **42 / 42** runs and confirmed the fix with a measurement in **41 / 42**.
 - It needed a median of **2 probe placements** and **5–6 turns** per fault.
-- It never gave a fix before hint level 3 in 41 / 42 runs. In all 41 confirmed fixes, a level-3 pointer was the most Bench gave: no run needed a level-4 "here's the answer". *Caveat: the scripted student acts on a level-3 pointer straight away; a real student may need level 4.*
+- It never gave a fix before hint level 3 in 41 / 42 runs. In all 41 confirmed fixes, a level-3 pointer was the most ALTA gave: no run needed a level-4 "here's the answer". *Caveat: the scripted student acts on a level-3 pointer straight away; a real student may need level 4.*
 
 **Where it still slips:**
-- **Probe in the wrong row (Lab 2).** Once the student says "my probe is in row 34", Bench sometimes says "move it to row 30" at hint level 1–2, instead of asking where the output is.
+- **Probe in the wrong row (Lab 2).** Once the student says "my probe is in row 34", ALTA sometimes says "move it to row 30" at hint level 1–2, instead of asking where the output is.
 - **Opening reply.** Now and then it's 3 sentences.
-- **Diagnosing from words alone.** For `parts_swapped`, the student's description ("covering it makes the output go up") was once enough for Bench to name the fault before measuring.
+- **Diagnosing from words alone.** For `parts_swapped`, the student's description ("covering it makes the output go up") was once enough for ALTA to name the fault before measuring.
 
 Re-run: `cd server && uv run python -m bench.scenarios [--fast] [--fault <id>] [--runs 3]`. It makes real API calls: about $1.50 for the whole suite, about $3 in fast mode. Transcripts and JSONL logs go to `recordings/scenarios/<time>/`; `python -m bench.metrics` reads the logs.

@@ -115,7 +115,7 @@ def test_unplug_and_replug_recovers_within_2s(pod):
         inbox.state("idle", timeout=2.0)
         assert time.monotonic() - t0 < 2.0
         inbox.wait_for(lambda m: m["type"] == "probes")
-        assert poll(lambda: "LED IDLE" in pod.commands[n:])  # LED back in step with Bench
+        assert poll(lambda: "LED IDLE" in pod.commands[n:])  # LED back in step with ALTA
 
 
 def test_a_short_brown_out_is_ridden_out(pod):
@@ -145,7 +145,7 @@ def test_only_valid_led_commands_are_replayed(pod):
         n = len(pod.commands)
         pod.plug()
         assert poll(lambda: bridge.connected)
-        assert poll(lambda: "LED IDLE" in pod.commands[n:])  # replayed, then back to idle with Bench
+        assert poll(lambda: "LED IDLE" in pod.commands[n:])  # replayed, then back to idle with ALTA
         assert "LED NOPE" not in pod.commands[n:]
 
 

@@ -156,7 +156,7 @@ class VoiceIn:
         self._tasks: set[asyncio.Task] = set()
 
     def press(self, barge_in: bool = False) -> None:
-        """The button went down and the session is now listening. On barge-in the pre-roll holds Bench's own
+        """The button went down and the session is now listening. On barge-in the pre-roll holds ALTA's own
         voice from the speaker, so the clip starts at the press instead."""
         self.mic.start_clip(preroll=not barge_in)
 
@@ -207,7 +207,7 @@ class VoiceIn:
         await self.on_transcript(text)
 
 
-# ---------- command line: check the mic and STT without the rest of Bench ----------
+# ---------- command line: check the mic and STT without the rest of ALTA ----------
 
 def _list_devices() -> None:
     import sounddevice as sd

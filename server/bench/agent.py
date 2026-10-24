@@ -12,8 +12,8 @@ API notes (checked against the Claude docs, not guessed):
 - assistant turns are appended exactly as returned (thinking blocks included) and never edited
 
 Speech (#19, #22): with speak_stream set, every round is spoken sentence by sentence while Claude is
-still writing it. Bench speaks first: the reply comes before the tool calls that go with it, so when every
-call in a round is one whose result can't change what Bench says (SPEAK_FIRST_TOOLS: highlights,
+still writing it. ALTA speaks first: the reply comes before the tool calls that go with it, so when every
+call in a round is one whose result can't change what ALTA says (SPEAK_FIRST_TOOLS: highlights,
 ask_for_probe, record_diagnosis...), the turn ends right there, with no second round to wait for. Those
 tool results are sent with the next user message, so the history stays append-only and valid. If a round
 spoke and still needs another one (read_probes, look_at_board, a tool error), a system note says what the
@@ -53,7 +53,7 @@ GLITCH_LINE = "Sorry, my brain glitched. Can you say that again?"
 REFUSAL_LINE = "Let's keep our focus on the circuit. What are you seeing on the board?"
 OUT_OF_ROUNDS = "You've used all your tool calls for this turn. Reply to the student now, without calling tools."
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
-# Tools whose result can't change what Bench says: a round that spoke and called only these ends the turn.
+# Tools whose result can't change what ALTA says: a round that spoke and called only these ends the turn.
 SPEAK_FIRST_TOOLS = {"ask_for_probe", "highlight", "clear_highlights", "highlight_schematic", "show_manual_step",
                      "record_diagnosis"}
 ALREADY_SAID = "The student already heard you say: \"{}\" Don't repeat it. Say only what's new, or reply {}."
@@ -162,7 +162,7 @@ class Agent:
     # ---------- one turn ----------
 
     async def turn(self, text: str | None = None, *, event: str | None = None) -> str | None:
-        """Run one turn. Returns what Bench said, or None if it stayed silent."""
+        """Run one turn. Returns what ALTA said, or None if it stayed silent."""
         async with self._lock:
             s = self.bench.session
             if event is not None and s.state is not State.idle:
@@ -273,7 +273,7 @@ class Agent:
                 log.warning("speech failed: %r", e)
 
     async def _rounds(self, msgs: list, gen: int) -> str:
-        said: list[str] = []  # every round's text: Bench says all of it, in order
+        said: list[str] = []  # every round's text: ALTA says all of it, in order
         told = False  # NOTHING_SAID sent this turn
         for round_no in range(MAX_ROUNDS + 1):
             last = round_no == MAX_ROUNDS

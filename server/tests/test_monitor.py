@@ -166,7 +166,7 @@ def test_moving_between_holes_at_the_same_voltage_still_answers_the_request():
     rig.do("Y rail:a+")
     rig.run(1.0)
     rig.ask(at="6c", net="n_5v")  # the probe already reads 5 V, so only the move tells us
-    assert rig.run(1.0) == []  # Bench says where to put it
+    assert rig.run(1.0) == []  # ALTA says where to put it
     rig.do("unplug Y")
     rig.run(0.4)
     rig.do("Y 6c")

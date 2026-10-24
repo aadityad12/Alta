@@ -38,7 +38,7 @@ def create_app(
 ) -> FastAPI:
     """pod_port: serial device path, "off" for no pod, or None to use POD_PORT / auto-detect.
     mic / speaker: device index or name, "off" for none, or None to use MIC_DEVICE / SPEAKER_DEVICE
-    (empty = the system default). With no speaker, Bench's replies are captions only."""
+    (empty = the system default). With no speaker, ALTA's replies are captions only."""
     if demo_ui is None:
         demo_ui = os.environ.get("BENCH_DEMO_UI") == "1"
     if pod_port is None:
@@ -107,7 +107,7 @@ def create_app(
             bench.voice = open_voice()
         if agent:
             if not os.environ.get("ANTHROPIC_API_KEY"):
-                log.warning("ANTHROPIC_API_KEY is not set (.env); Bench will answer with its fallback line")
+                log.warning("ANTHROPIC_API_KEY is not set (.env); ALTA will answer with its fallback line")
             log.info("agent model: %s%s", agent.model, " (fast mode)" if agent.speed == "fast" else "")
             tasks.append(asyncio.create_task(agent.run()))
             tasks.append(asyncio.create_task(monitor.run()))
@@ -125,7 +125,7 @@ def create_app(
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    app = FastAPI(title="Bench", lifespan=lifespan)
+    app = FastAPI(title="ALTA", lifespan=lifespan)
     board = MockBoard(bench, labs_dir) if mock_board else None
     app.state.brain = mount(app, bench, agent, board)  # dev page: /brain
     app.state.bench = bench

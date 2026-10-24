@@ -30,13 +30,13 @@ svg text{font-family:var(--font-sans)}
 
 <section>
 <h3>The bench, seen from the side</h3>
-<p class="sub">The probe pod is a small box of leads. The student plugs a lead into the breadboard row Bench asks for, and Bench reads the real voltage there instead of guessing from the camera.</p>
-<svg id="bench" viewBox="0 0 700 375" width="100%" role="img" aria-label="Bench setup diagram"></svg>
+<p class="sub">The probe pod is a small box of leads. The student plugs a lead into the breadboard row ALTA asks for, and ALTA reads the real voltage there instead of guessing from the camera.</p>
+<svg id="bench" viewBox="0 0 700 375" width="100%" role="img" aria-label="ALTA setup diagram"></svg>
 <div class="legend">
 <div><span class="n">1</span>Phone on a gooseneck clamp, looking straight down (Continuity Camera)</div>
 <div><span class="n">2</span>Breadboard with 4 printed ArUco tags at its corners so the software knows where every hole is</div>
 <div><span class="n">3</span>Probe pod: Pico + ADC in a printed box, a big push-to-talk button, and 4 colored leads</div>
-<div><span class="n">4</span>Yellow probe plugged into row 10, the row Bench highlighted on screen</div>
+<div><span class="n">4</span>Yellow probe plugged into row 10, the row ALTA highlighted on screen</div>
 <div><span class="n">5</span>Black ground lead, clipped once to the circuit's ground rail at setup</div>
 <div><span class="n">6</span>One USB cable: power + readings ~20×/s to the laptop</div>
 <div><span class="n">7</span>Laptop runs everything and shows the live feed, manual and probe gauges</div>
@@ -127,12 +127,12 @@ function badge(n,x,y){el('circle',{cx:x,cy:y,r:9,fill:'var(--accent)'});el('text
 badge(1,322,40);badge(2,470,250);badge(3,12,195);badge(4,colX(10)+12,212);badge(5,colX(2)-14,170);badge(6,300,356);badge(7,690,32);
 
 const steps=[
- ['0 · Setup (once, ~1 min)','Opens the Bench page, picks "Lab 3: LED". Clips the black lead to the ground rail.','<span class="say">"Hey, I\'m Bench. Build at your own pace and hit the button if you get stuck."</span>','Board outlined in green (tags found). Manual open at step 1. Bench stays quiet.'],
+ ['0 · Setup (once, ~1 min)','Opens the ALTA page, picks "Lab 3: LED". Clips the black lead to the ground rail.','<span class="say">"Hey, I\'m ALTA. Build at your own pace and hit the button if you get stuck."</span>','Board outlined in green (tags found). Manual open at step 1. ALTA stays quiet.'],
  ['1 · Builds','Follows the manual. Says "done" or taps to move on a step.','Silent. It does not give out steps unasked.','Manual panel follows along. The camera checks big-picture layout only.'],
  ['2 · Gets stuck','LED is dark. Presses the button: "My LED isn\'t turning on."','<span class="say">"Let\'s find where power stops. Plug the yellow probe into row 10. I\'ve lit it up for you."</span>','Row 10 glows yellow on the live feed. The node between the resistor and LED glows on the schematic.'],
  ['3 · Measures','Plugs the yellow lead into row 10.','<span class="say">"5 volts. If current were flowing, the resistor would drop about 3 volts and you\'d see about 2 here. So no current is flowing. What part only lets current go one way?"</span>','Gauge: <span class="gauge bad">Y 5.01 V · expect ≈2.0</span>'],
  ['4 · Thinks it through (hint ladder)','"The LED? …is it backwards?"','<span class="say">"Good thought. Which leg is longer, and which row is it in?"</span> It only draws an arrow on the LED if the student is still stuck.','If needed: an arrow on the LED in the live feed, with "long leg → +".'],
- ['5 · Fixes and confirms','Flips the LED. The probe is still plugged in.','The reading changes by itself, so Bench notices: <span class="say">"1.9 volts, which is the LED\'s forward voltage. Nice catch. On to step 4."</span>','Gauge: <span class="gauge ok">Y 1.92 V ✓</span> Manual moves to the next step.'],
+ ['5 · Fixes and confirms','Flips the LED. The probe is still plugged in.','The reading changes by itself, so ALTA notices: <span class="say">"1.9 volts, which is the LED\'s forward voltage. Nice catch. On to step 4."</span>','Gauge: <span class="gauge ok">Y 1.92 V ✓</span> Manual moves to the next step.'],
 ];
-document.getElementById('steps').innerHTML=steps.map(([h,a,b,c])=>`<div class="step"><div class="hd">${h}</div><div class="cols"><div><div class="lab">Student</div>${a}</div><div><div class="lab">Bench says</div>${b}</div><div><div class="lab">Screen shows</div>${c}</div></div></div>`).join('');
+document.getElementById('steps').innerHTML=steps.map(([h,a,b,c])=>`<div class="step"><div class="hd">${h}</div><div class="cols"><div><div class="lab">Student</div>${a}</div><div><div class="lab">ALTA says</div>${b}</div><div><div class="lab">Screen shows</div>${c}</div></div></div>`).join('');
 </script></body></html>

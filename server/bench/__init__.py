@@ -1,1 +1,1 @@
-"""Bench server package. Layout and contracts: docs/CONTRACTS.md."""
+"""ALTA server package. Layout and contracts: docs/CONTRACTS.md."""

@@ -1,7 +1,7 @@
 [project]
 name = "bench-server"
 version = "0.1.0"
-description = "Bench server: FastAPI hub, pod bridge, Claude agent, Cartesia voice"
+description = "ALTA server: FastAPI hub, pod bridge, Claude agent, Cartesia voice"
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.3.0",

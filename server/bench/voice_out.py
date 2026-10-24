@@ -8,7 +8,7 @@ stop() (barge-in, reset) silences the speaker at once and drops the rest of what
     uv run python -m bench.voice_out "Row 10 reads 1.92 V, so the LED is on."   # hear it + timing
     uv run python -m bench.voice_out --list-devices
 
-    uv run python -m bench.voice_out --audition            # the same Bench lines in 9 voices, to pick one
+    uv run python -m bench.voice_out --audition            # the same ALTA lines in 9 voices, to pick one
     uv run python -m bench.voice_out --audition --emotion content
 
 Env: CARTESIA_VOICE_ID (default: a placeholder until #36 picks one), BENCH_VOICE_SPEED (0.6-1.5),
@@ -88,7 +88,7 @@ def _ohms(m: re.Match) -> str:
 
 
 def normalize(text: str) -> str:
-    """What Bench writes -> what the TTS should say: "1.92 V" -> "about 1.9 volts", "10c" -> "row 10, column c"."""
+    """What ALTA writes -> what the TTS should say: "1.92 V" -> "about 1.9 volts", "10c" -> "row 10, column c"."""
     t = _EMOJI.sub("", text)
     t = _MARKDOWN.sub("", t)
     t = _VOLTS.sub(_volts, t)
@@ -99,6 +99,7 @@ def normalize(text: str) -> str:
     t = _RAIL.sub(lambda m: "the plus rail" if m.group(1) == "+" else "the minus rail", t)
     t = re.sub(r"\bLEDs\b", "L E Ds", t)
     t = re.sub(r"\bLED\b", "L E D", t)
+    t = re.sub(r"\bALTA\b", "Alta", t)  # the name is said as a word, not spelled out
     return re.sub(r"\s{2,}", " ", t).strip()
 
 
@@ -367,7 +368,7 @@ def output_device(value: str | None) -> int | str | None:
     return int(value) if value.isdigit() else value
 
 
-# ---------- command line: hear a line without the rest of Bench ----------
+# ---------- command line: hear a line without the rest of ALTA ----------
 
 def _list_devices() -> None:
     import sounddevice as sd
@@ -419,10 +420,10 @@ def main() -> None:
 
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     logging.basicConfig(level=logging.WARNING)
-    p = argparse.ArgumentParser(prog="bench.voice_out", description="Hear Bench's voice.")
+    p = argparse.ArgumentParser(prog="bench.voice_out", description="Hear ALTA's voice.")
     p.add_argument("text", nargs="?")
     p.add_argument("--list-devices", action="store_true")
-    p.add_argument("--audition", action="store_true", help="the same Bench lines in each candidate voice")
+    p.add_argument("--audition", action="store_true", help="the same ALTA lines in each candidate voice")
     p.add_argument("--emotion", default=None, help="with --audition: e.g. content, calm, happy, enthusiastic")
     args = p.parse_args()
     if args.list_devices:

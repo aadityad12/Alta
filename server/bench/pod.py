@@ -191,7 +191,7 @@ class PodBridge:
             return
         self.connected = True
         self._publish(ev.POD_STATUS, True)
-        if self._last_led:  # put the LED back to Bench's current state
+        if self._last_led:  # put the LED back to ALTA's current state
             self._write(self._last_led)
 
     def _close(self) -> None:

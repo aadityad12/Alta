@@ -1,5 +1,5 @@
 """Probe monitor (#21): tell the agent when a probe it asked for lands and settles, or when a fault gets
-fixed, so Bench reacts with no button press.
+fixed, so ALTA reacts with no button press.
 
 Only probes with a pending `expect` (from ask_for_probe) are watched. For each one, the last STEADY_S of
 readings has to hold within ±STEADY_MV, with a quiet lo–hi spread in every 50 ms window ("steady"). A
@@ -10,8 +10,8 @@ steady reading is reported once, if it's news:
 Contact bounce while plugging never holds steady, so it's never reported; a jiggle that comes back to the
 same value isn't news.
 
-Events wait while anyone is talking or Bench is busy (any state but idle), and go out together as one
-`[event]` turn when Bench is idle again. A newer event for a probe replaces its older one; anything older
+Events wait while anyone is talking or ALTA is busy (any state but idle), and go out together as one
+`[event]` turn when ALTA is idle again. A newer event for a probe replaces its older one; anything older
 than MAX_AGE_S is dropped.
 """
 
@@ -176,7 +176,7 @@ class Monitor:
                 log.info("monitor: dropped stale event: %s", e.text)
                 del self.pending[p]
         if not self.pending or self.bench.session.state is not State.idle:
-            return  # never talk over the student, or over Bench
+            return  # never talk over the student, or over ALTA
         events = [e for _, e in sorted(self.pending.values(), key=lambda x: x[0])]
         self.pending.clear()
         text = " ".join(e.text for e in events)

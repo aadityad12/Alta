@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 FRAME_TIMEOUT_S = 2.0
 FRAME_MAX_PX = 1280  # long side; plenty for row numbers, and cheaper and faster than the model's 2576 px limit
 FRAMES_PER_TURN = 1
-FRAMES_WHEN_ASKED = 3  # the student asked Bench to look
+FRAMES_WHEN_ASKED = 3  # the student asked ALTA to look
 _ASKED_TO_LOOK = re.compile(r"\b(look|looking|see|camera|photo|picture|watch)\b", re.I)
 FRAME_DIR = Path(__file__).resolve().parents[2] / "recordings" / "frames"
 

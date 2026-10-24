@@ -83,7 +83,7 @@ for lab in labs:
 <table><thead><tr><th>Ref</th><th>Part</th><th colspan="2">Holes</th></tr></thead><tbody>{parts}</tbody></table>
 <table><thead><tr><th>Net</th><th>Label</th><th>Holes</th><th>Expected</th></tr></thead><tbody>{netrows}</tbody></table>
 <table><thead><tr><th>Fault</th><th>How to stage</th><th>Symptom</th><th>Readings (mV)</th></tr></thead><tbody>{faults}</tbody></table></section>''')
-page=f'''<!doctype html><html><head><meta charset="utf-8"><title>Bench · lab board placement</title><style>
+page=f'''<!doctype html><html><head><meta charset="utf-8"><title>ALTA · lab board placement</title><style>
 :root{{--background:#0d1117;--foreground:#e6edf3;--muted-foreground:#8b949e;--card:#161b22;--border:#30363d;--accent:#2f81f7;--warning:#d29922;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;--radius:8px}}
 html{{background:var(--background)}}body{{margin:0 auto;padding:24px;max-width:980px;font-family:var(--font-sans);color:var(--foreground)}}
 h2{{font-size:17px;margin:0 0 4px}}h3{{font-size:15px;margin:22px 0 8px;display:flex;gap:8px;align-items:center}}
