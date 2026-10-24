@@ -171,7 +171,7 @@ class Student:
             "row a leg or wire is in, the resistor's color bands, whether the LED is lit, what a probe reads), answer "
             "in one short, casual sentence, truthfully, the way a beginner would. Don't guess at the cause and don't "
             "mention the manual's hole names unless asked. If the question asks you to reason, explain or diagnose "
-            "rather than look, reply with exactly PASS."
+            "rather than look, reply with exactly PASS. Reply with only the words the student says out loud."
         )
         resp = await self.client.messages.create(
             model=GRADER_MODEL, max_tokens=1000, messages=[{"role": "user", "content": prompt}],
@@ -193,7 +193,7 @@ class Student:
         if any(c.startswith("light") for c in did):
             return {"light 0": "Okay, I'm covering it.", "light 1": "Okay, I'm shining my phone light on it.",
                     "light 0.5": "Okay, I took my hand away."}[did[-1]]
-        if "?" in reply and self.client and self.answered < MAX_ANSWERS:
+        if "?" in reply and reply != GLITCH_LINE and self.client and self.answered < MAX_ANSWERS:
             line = await self.answer(reply)
             if line:
                 self.answered += 1
@@ -207,7 +207,7 @@ class Student:
 
 
 async def run_one(lab, fault: dict, n: int, *, client, model: str, effort: str, out_dir: Path, grade: bool,
-                  verbose: bool) -> Run:
+                  verbose: bool, speed: str | None = None) -> Run:
     run = Run(lab.id, fault["id"], n, model)
     bench = Bench({lab.id: lab})
     bench.session.lab_id = lab.id
@@ -228,7 +228,7 @@ async def run_one(lab, fault: dict, n: int, *, client, model: str, effort: str, 
     student = Student(lab.data, fault, rng_seed=n, client=client if grade else None)
     monitor = Monitor(bench, clock=lambda: student.t)
     events = bench.bus.subscribe()
-    agent = Agent(bench, client=client, model=model, effort=effort, pod_connected=lambda: True)
+    agent = Agent(bench, client=client, model=model, effort=effort, speed=speed or "", pod_connected=lambda: True)
     step: Step | None = None
 
     def on_tool(name, args, result, is_error):
@@ -394,14 +394,15 @@ async def grade_run(run: Run, lab: dict, fault: dict, client) -> None:
         "is not naming the fault.\n"
         "- gives_fix: does the reply tell the student what exactly to change to fix it (e.g. \"flip the LED around\", "
         "\"swap in the 220 ohm resistor\")? Pointing at where to look, or asking a question, is not giving the fix. "
-        "Telling the student where to put a probe to take a measurement is not giving the fix either, unless the "
-        "reply says the probe's position is what's wrong.\n"
+        "Telling the student where to put a probe to take a measurement is not giving the fix either, even when the "
+        "fault is about probe placement: \"Put the yellow probe in row 30\" is a measurement request. It only counts "
+        "as giving the fix if the reply also says the probe was in the wrong place.\n"
         "Judge each reply on its own words. Give a few words of why.\n\n" + numbered
     )
     resp = await client.messages.create(
         model=GRADER_MODEL, max_tokens=4000,
         messages=[{"role": "user", "content": prompt}],
-        output_config={"effort": "low", "format": {"type": "json_schema", "schema": _GRADE_SCHEMA}},
+        output_config={"effort": "medium", "format": {"type": "json_schema", "schema": _GRADE_SCHEMA}},
     )
     data = json.loads(next(b.text for b in resp.content if b.type == "text"))
     by_n = {r["n"]: r for r in data["replies"]}
@@ -493,14 +494,14 @@ async def run_all(args) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     client = anthropic.AsyncAnthropic(max_retries=2)
     model = args.model or os.environ.get("BENCH_MODEL") or "claude-opus-5-5"
-    print(f"{len(jobs)} runs · model {model} (effort {args.effort}) · grader + student {GRADER_MODEL if args.grade else 'off'}"
+    print(f"{len(jobs)} runs · model {model} (effort {args.effort}{', fast' if args.fast else ''}) · grader + student {GRADER_MODEL if args.grade else 'off'}"
           f" · logs in {out_dir}", file=sys.stderr)
     sem = asyncio.Semaphore(args.concurrency)
 
     async def one(lab, fault, n):
         async with sem:
             r = await run_one(lab, fault, n, client=client, model=model, effort=args.effort, out_dir=out_dir,
-                              grade=args.grade, verbose=args.verbose)
+                              grade=args.grade, verbose=args.verbose, speed="fast" if args.fast else None)
             print(f"  {r.lab}/{r.fault} #{r.n}: {'pass' if r.passed else 'FAIL'} in {len(r.steps)} turns", file=sys.stderr)
             return r
 
@@ -513,7 +514,7 @@ async def run_all(args) -> int:
         for r in failed:
             whys = ([f"crashed: {r.crashed}"] if r.crashed else []) + [w for ws in r.rules.values() for w in ws]
             print(f"  {r.lab}/{r.fault} #{r.n}: " + "; ".join(whys))
-    (out_dir / "summary.md").write_text(f"model {model}, effort {args.effort}\n\n{table}\n")
+    (out_dir / "summary.md").write_text(f"model {model}, effort {args.effort}{', fast' if args.fast else ''}\n\n{table}\n")
     (out_dir / "runs.json").write_text(json.dumps([{
         "lab": r.lab, "fault": r.fault, "n": r.n, "model": r.model, "passed": r.passed, "resolved": r.resolved,
         "crashed": r.crashed, "rules": r.rules, "turns": len(r.steps), "log": str(r.log_path),
@@ -530,6 +531,7 @@ def main() -> None:
     p.add_argument("--runs", type=int, default=3)
     p.add_argument("--model", default=None, help="default: BENCH_MODEL or claude-opus-5-5")
     p.add_argument("--effort", default="low")
+    p.add_argument("--fast", action="store_true", help="Opus fast mode (speed=fast)")
     p.add_argument("--concurrency", type=int, default=4)
     p.add_argument("--no-haiku", dest="grade", action="store_false",
                    help="no claude-haiku-5-5 calls: skip the rule-2 grader, and the student only says canned lines")
