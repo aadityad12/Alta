@@ -263,6 +263,7 @@ class Speaker:
                         await ctx.push(normalize(sentence) + " ")
                         if not sent_at:
                             sent_at.append(time.monotonic())
+                            s.record("first_sentence")
                     except Exception as e:
                         log.warning("tts push failed: %r (captions only from here)", e)
                         ctx = None
@@ -328,6 +329,7 @@ class Speaker:
                         took = time.monotonic() - sent_at[0] + self.player.latency
                         self.timings.append(took)
                         log.info("tts: first audio %.0f ms after text ready (%s)", took * 1000, self.model)
+                        self.session.record("first_audio", ms=round(took * 1000))
                 self.player.write(np.frombuffer(audio, dtype="<i2"))
             elif ev.type == "error":
                 log.warning("tts error: %s", getattr(ev, "error", ev))
