@@ -266,3 +266,16 @@ def test_typed_text_runs_a_turn_over_the_websocket():
         t = inbox.wait_for(lambda m: m["type"] == "transcript")
         assert (t["role"], t["text"]) == ("bench", "Let's start at the top. Put the yellow probe in row 6.")
         inbox.state("idle")
+
+
+def test_only_the_last_text_is_spoken_not_narration_before_tool_calls():
+    agent, _, sent = make(
+        msg("Let's find out where the power stops.", tool("ask_for_probe", probe="Y", at="10c")),
+        msg("Let's find where the power stops. Put the yellow probe in row 10."),
+    )
+    assert run(agent.turn("dark LED")) == "Let's find where the power stops. Put the yellow probe in row 10."
+
+
+def test_text_from_an_earlier_round_is_used_if_the_last_round_has_none():
+    agent, _, _ = make(msg("Put the yellow probe in row 6.", tool("ask_for_probe", probe="Y", at="6c")), msg())
+    assert run(agent.turn("hi")) == "Put the yellow probe in row 6."

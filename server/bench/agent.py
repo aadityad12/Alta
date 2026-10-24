@@ -164,7 +164,7 @@ class Agent:
             return reply
 
     async def _rounds(self, msgs: list, gen: int) -> str:
-        texts: list[str] = []
+        spoken = ""  # the latest round's text: earlier text is narration around tool calls, not the reply
         for round_no in range(MAX_ROUNDS + 1):
             last = round_no == MAX_ROUNDS
             if last:
@@ -175,7 +175,9 @@ class Agent:
             if resp.stop_reason == "refusal":
                 raise _Refused
             msgs.append({"role": "assistant", "content": resp.content})
-            texts += [b.text for b in resp.content if b.type == "text" and b.text.strip()]
+            text = " ".join(b.text.strip() for b in resp.content if b.type == "text" and b.text.strip())
+            if text:
+                spoken = text
             tool_uses = [b for b in resp.content if b.type == "tool_use"]
             if not tool_uses:
                 if resp.stop_reason == "pause_turn":
@@ -199,7 +201,7 @@ class Agent:
                     result["is_error"] = True
                 results.append(result)
             msgs.append({"role": "user", "content": results})  # all results in one message
-        return " ".join(t.strip() for t in texts)
+        return spoken
 
     async def _request(self, msgs: list):
         async with self.client.beta.messages.stream(
