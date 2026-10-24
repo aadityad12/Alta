@@ -1,0 +1,31 @@
+# Demo copy of the example lab in docs/CONTRACTS.md §6, used only by --demo-ui.
+# The real labs live in labs/ (#4); a real lab with the same id wins.
+id: lab1-led
+title: "Lab 1 · Light an LED"
+supply_mv: 5000
+parts:
+  - {ref: W1, kind: wire, color: red,   pins: {"1": "rail:a+", "2": "6a"}}
+  - {ref: R1, kind: resistor, value_ohm: 220, pins: {"1": "6c", "2": "10c"}}
+  - {ref: D1, kind: led, color: red, pins: {anode: "10d", cathode: "13d"}}
+  - {ref: W2, kind: wire, color: black, pins: {"1": "13a", "2": "rail:a-"}}
+nets:
+  - {id: n_5v,        label: "5 V",       holes: ["rail:a+", "6:a-e"],  expected_mv: 5000, tol_mv: 250}
+  - {id: n_led_anode, label: "LED anode", holes: ["10:a-e"],            expected_mv: 1900, tol_mv: 300}
+  - {id: n_gnd,       label: "Ground",    holes: ["13:a-e", "rail:a-"], expected_mv: 0,    tol_mv: 100}
+steps:
+  - {n: 1, title: "Power the rails", nets: [n_5v]}
+  - {n: 2, title: "Add the resistor", nets: [n_5v]}
+  - {n: 3, title: "Add the LED", nets: [n_led_anode, n_gnd]}
+faults:
+  - id: led_reversed
+    name: "LED in backwards"
+    how_to_stage: "Flip D1 so the long leg is in row 13"
+    symptom: "LED stays dark"
+    readings: {n_led_anode: 5000, n_gnd: 0}
+    root_cause: "An LED only lets current flow one way. Reversed, no current flows, so the resistor drops nothing."
+    hints:
+      - "L1 nudge: Let's find where the power stops."
+      - "L2 question: If current were flowing, what would the resistor do to the voltage?"
+      - "L3 point: Look at the LED's legs in rows 10 and 13. Which one is longer?"
+      - "L4 fix: The long leg (anode) goes toward the resistor, in row 10."
+verified: false
