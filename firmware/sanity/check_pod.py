@@ -48,8 +48,17 @@ def parse(line: str) -> dict | None:
     return out if all(p in out for p in PROBES) and "btn" in out else None
 
 
-def samples(ser: serial.Serial, n: int = 10) -> list[dict]:
+def drain(ser: serial.Serial, secs: float = 1.2) -> None:
+    """Throw away what's queued. reset_input_buffer only clears the Mac's side: the Uno's USB
+    chip still holds readings from while we sat at a prompt, and they'd arrive first."""
     ser.reset_input_buffer()
+    end = time.monotonic() + secs
+    while time.monotonic() < end:
+        ser.read(ser.in_waiting or 1)
+
+
+def samples(ser: serial.Serial, n: int = 10) -> list[dict]:
+    drain(ser)
     got: list[dict] = []
     deadline = time.monotonic() + n * 0.2 + 3
     while len(got) < n and time.monotonic() < deadline:

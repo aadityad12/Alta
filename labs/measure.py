@@ -47,6 +47,12 @@ class Pod:
         self.ser.reset_input_buffer()
 
     def samples(self, secs: float) -> list[dict]:
+        # Drop what queued up while we waited at a prompt (the Uno's USB chip holds old lines
+        # that reset_input_buffer can't reach), so every reading is from after Enter.
+        self.ser.reset_input_buffer()
+        end = time.monotonic() + 0.6
+        while time.monotonic() < end:
+            self.ser.read(self.ser.in_waiting or 1)
         out, end = [], time.monotonic() + secs
         while time.monotonic() < end:
             line = self.ser.readline().decode(errors="replace").strip()
