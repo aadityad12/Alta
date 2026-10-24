@@ -49,7 +49,8 @@ def run(coro):
 
 
 def last_tool_results(request):
-    return [c for c in request["messages"][-1]["content"] if c["type"] == "tool_result"]
+    last = next(m for m in reversed(request["messages"]) if m["role"] == "user" and isinstance(m["content"], list))
+    return [c for c in last["content"] if c["type"] == "tool_result"]
 
 
 def assert_history_valid(messages):
@@ -187,7 +188,7 @@ def test_tool_rounds_are_capped_and_history_stays_valid():
     run(agent.turn("loop forever"))
     assert len(fake.requests) == agent_mod.MAX_ROUNDS + 1
     assert fake.requests[-1]["messages"][-1] == {"role": "system", "content": OUT_OF_ROUNDS}
-    assert "system" not in [m["role"] for r in fake.requests[:-1] for m in r["messages"]]
+    assert OUT_OF_ROUNDS not in [m["content"] for r in fake.requests[:-1] for m in r["messages"] if m["role"] == "system"]
     assert_history_valid(agent.messages)
 
 
@@ -308,6 +309,14 @@ def test_spoken_text_before_read_probes_gets_a_second_round_that_knows_what_was_
     assert run(agent.turn("what does it read?")) == "Let me check the probes. Row 10 reads 5 volts."
     note = fake.requests[1]["messages"][-1]
     assert note["role"] == "system" and "Let me check the probes." in note["content"]
+
+
+def test_a_silent_side_effect_round_is_told_the_student_heard_nothing():
+    agent, fake, _ = make(msg(tool("record_diagnosis", fault_id="unknown", confidence=0.3, evidence="-",
+                                   hint_level=1, resolved=False)), msg("What does row 10 read?"))
+    assert run(agent.turn("help")) == "What does row 10 read?"
+    note = fake.requests[1]["messages"][-1]
+    assert note["role"] == "system" and "hasn't heard anything" in note["content"]
 
 
 def test_a_tool_error_in_a_speak_first_round_gets_another_round():

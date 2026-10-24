@@ -57,6 +57,9 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 SPEAK_FIRST_TOOLS = {"ask_for_probe", "highlight", "clear_highlights", "highlight_schematic", "show_manual_step",
                      "record_diagnosis"}
 ALREADY_SAID = "The student already heard you say: \"{}\" Don't repeat it. Say only what's new, or reply {}."
+# Text written before a tool call can come back as a hidden progress note instead of text; then Claude thinks
+# it already spoke and writes a report about the student. Say plainly that nothing was heard.
+NOTHING_SAID = "The student hasn't heard anything from you this turn. What you write next is spoken to them directly."
 FILLER_S = 1.5  # BENCH_FILLER_S; 0 = off
 FILLER_LINES = ("Mm, let me check.", "Okay, one sec.", "Hmm, let me look.")
 WARM_EVERY_S = 270  # the cache lives 5 minutes; re-warm a bit before that when nothing else has used it
@@ -271,6 +274,7 @@ class Agent:
 
     async def _rounds(self, msgs: list, gen: int) -> str:
         said: list[str] = []  # every round's text: Bench says all of it, in order
+        told = False  # NOTHING_SAID sent this turn
         for round_no in range(MAX_ROUNDS + 1):
             last = round_no == MAX_ROUNDS
             if last:
@@ -317,6 +321,9 @@ class Agent:
                 break  # spoke first, and nothing it called can change that: done. Results go with the next message.
             if said:
                 msgs.append({"role": "system", "content": ALREADY_SAID.format(" ".join(said), SILENT)})
+            elif not told and all(b.name in SPEAK_FIRST_TOOLS for b in tool_uses):
+                msgs.append({"role": "system", "content": NOTHING_SAID})
+                told = True
         return " ".join(said)
 
     async def _request(self, msgs: list, live: "_LiveSpeech | None" = None):
