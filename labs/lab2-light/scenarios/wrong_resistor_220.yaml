@@ -1,0 +1,5 @@
+# 220 Ω on the bottom: output ≈ 0.26 V in room light and barely moves. Format: labs/README.md
+lab: lab2-light
+fault: wrong_resistor_220
+light_model: {net: n_out, sensor_on: top, fixed_ohm: 220, sensor_ohm: {dark: 200000, room: 4000, bright: 300}}
+probes: {Y: "30c"}
