@@ -276,3 +276,13 @@ def test_a_turn_that_fails_fast_never_says_the_filler():
     agent.filler_s = 0.2
     assert asyncio.run(agent.turn("hi")) == GLITCH_LINE
     assert "Mm, let me check. " not in pushed(sp)
+
+
+def test_emotion_goes_into_generation_config():
+    agent, _, _ = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1", emotion="content")
+    sp._conn = FakeConn()
+    asyncio.run(sp.say("Nice work!"))
+    assert sp._conn.kwargs[0]["generation_config"] == {"emotion": "content"}
