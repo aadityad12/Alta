@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bench · Brain view</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f1115; --card: #171a21; --line: #262b36; --text: #e6e8ee; --dim: #8b93a7;
+    --Y: #f2c230; --B: #4b8bff; --G: #3fbf6f; --W: #e8e8e8;
+    --attention: #ff9b3d; --good: #3fbf6f; --bad: #ff5a5a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  header .sub { color: var(--dim); font-size: 12px; }
+  .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #2a2f3a; }
+  .badge.idle { background: #2a2f3a; } .badge.listening { background: #1f6f3f; } .badge.transcribing,
+  .badge.thinking { background: #2d4f8f; } .badge.speaking { background: #7a4fb0; } .badge.error { background: #8f2d2d; }
+  header .spacer { flex: 1; }
+  select, button, input[type=text] { background: #222734; color: var(--text); border: 1px solid #333a49; border-radius: 6px; padding: 5px 9px; font: inherit; }
+  button { cursor: pointer; } button:hover { border-color: #4a5266; }
+  main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr); gap: 14px; padding: 14px 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 0 0 8px; font-weight: 600; }
+  .note { color: var(--dim); font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  svg { width: 100%; height: auto; display: block; }
+  .hole { fill: #3a4050; } .hole.click { cursor: crosshair; } .hole.click:hover { fill: #9aa3b8; }
+  .pulse { animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .chip { padding: 3px 10px; border-radius: 999px; border: 2px solid transparent; font-weight: 700; color: #111; }
+  .chip.sel { border-color: #fff; }
+  .gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .gauge { background: #12151b; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .gauge .v { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .gauge .exp { font-size: 11px; color: var(--dim); min-height: 15px; }
+  .bar { position: relative; height: 8px; background: #262b36; border-radius: 4px; margin-top: 6px; }
+  .bar .band { position: absolute; top: 0; bottom: 0; background: rgba(63,191,111,.35); border-radius: 4px; }
+  .bar .needle { position: absolute; top: -3px; width: 3px; height: 14px; border-radius: 2px; background: #fff; }
+  #talk { width: 100%; padding: 16px; font-size: 16px; font-weight: 650; border-radius: 10px; background: #1f2f4f; border-color: #2d4f8f; user-select: none; }
+  #talk.down { background: #1f6f3f; border-color: #3fbf6f; }
+  .msgs { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .msg { padding: 7px 10px; border-radius: 8px; max-width: 92%; }
+  .msg.student { align-self: flex-end; background: #24324a; }
+  .msg.bench { align-self: flex-start; background: #2c2440; }
+  .msg.system { align-self: center; color: var(--dim); font-size: 12px; }
+  .msg.live { opacity: .7; }
+  .feed { max-height: 420px; overflow-y: auto; font-size: 12.5px; }
+  .item { padding: 6px 0; border-bottom: 1px dashed #262b36; }
+  .item .k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
+  .k.turn { color: #8fb4ff; } .k.tool { color: var(--attention); } .k.reply { color: #c49bff; } .k.monitor { color: var(--Y); }
+  .k.time { color: var(--dim); } .k.err { color: var(--bad); }
+  pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; color: #b9c0d0; font-size: 11.5px; max-height: 160px; overflow: auto; }
+  details pre { max-height: 400px; }
+  #cam img { width: 100%; border-radius: 6px; display: block; }
+  #cam.looked img { outline: 3px solid var(--attention); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bench · Brain view</h1>
+  <span id="state" class="badge">connecting…</span>
+  <span id="model" class="sub"></span>
+  <span class="spacer"></span>
+  <label class="sub">Lab <select id="lab"></select></label>
+  <button id="reset" title="New student: clears the conversation">New student</button>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>The breadboard, as Bench points at it</h2>
+      <svg id="board" viewBox="0 0 900 380"></svg>
+      <div class="note" id="boardnote">Parts are drawn from the lab definition (how the manual says to build it). Bench's
+        highlights and probe requests appear live. Dots = where the probes actually are.</div>
+      <div id="controls" class="row" style="margin-top:10px; display:none">
+        <span class="note">Student's hands:</span>
+        <span class="note">click a hole to plug</span>
+        <span id="chips" class="row"></span>
+        <button id="unplug">Unplug all</button>
+        <span class="note" style="margin-left:8px">Board fault</span>
+        <select id="fault"></select>
+        <button id="stage">Stage it</button>
+        <button id="fix">Fix it</button>
+        <span id="lightbox" class="row" style="display:none">
+          <span class="note">Light</span><input id="light" type="range" min="0" max="1" step="0.25" value="0.5">
+          <span id="lightv" class="note">room</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Probe readings (what the pod measures)</h2>
+      <div class="gauges" id="gauges"></div>
+    </div>
+
+    <div class="card" id="cam">
+      <h2>Camera</h2>
+      <div class="row" style="margin-bottom:8px">
+        <select id="sample"></select>
+        <label class="note"><input type="checkbox" id="sendphoto"> Answer Bench's camera requests with this photo</label>
+      </div>
+      <img id="photo" alt="">
+      <div class="note" style="margin-top:6px">Sample overhead footage (#34), not the live board: the live camera and its row/column
+        overlay come with the student screen (#11, #30). Until then Claude only sees a photo if you tick the box, and it
+        won't match the staged fault.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <button id="talk">Hold to talk (or hold Space)</button>
+      <div class="row" style="margin-top:8px">
+        <input id="text" type="text" placeholder="…or type to Bench and press Enter" style="flex:1">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Conversation</h2>
+      <div class="msgs" id="msgs"></div>
+    </div>
+
+    <div class="card">
+      <h2>What Claude sees, step by step</h2>
+      <div class="feed" id="feed"><div class="note">Talk to Bench and every input Claude gets shows up here.</div></div>
+      <details style="margin-top:8px"><summary class="note">…plus, every turn: the system prompt (persona, teaching rules, the lab's answer key)</summary>
+        <pre id="system">loading…</pre></details>
+    </div>
+  </section>
+</main>
+
+<script>
+const PROBES = ["Y", "B", "G", "W"], NAMES = {Y: "Yellow", B: "Blue", G: "Green", W: "White"};
+const COLS = "abcdefghij", DX = 26, X0 = 40, TOP = 96;
+const STYLE = {"probe-Y": "var(--Y)", "probe-B": "var(--B)", "probe-G": "var(--G)", "probe-W": "var(--W)",
+               attention: "var(--attention)", good: "var(--good)", bad: "var(--bad)"};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+let lab = null, rows = [1, 30], expects = {}, overlays = new Map(), probes = null, board = null, selProbe = "Y";
+let ws, live = null;
+
+// ---------- geometry ----------
+const colY = (c) => { const i = COLS.indexOf(c); return TOP + i * 22 + (i >= 5 ? 30 : 0); };
+const railY = (side, sign) => side === "a" ? (sign === "+" ? 30 : 56) : colY("j") + (sign === "+" ? 40 : 66);
+const rowX = (r) => X0 + (r - rows[0]) * DX;
+function where(at, rowHint) {  // a place -> {x, y} (or a box for strips/rails)
+  let m;
+  if ((m = /^(\d+)([a-j])$/.exec(at))) return {x: rowX(+m[1]), y: colY(m[2])};
+  if ((m = /^(\d+):(a-e|f-j)$/.exec(at))) {
+    const [c0, c1] = m[2] === "a-e" ? ["a", "e"] : ["f", "j"];
+    return {x: rowX(+m[1]), y: (colY(c0) + colY(c1)) / 2, box: {x: rowX(+m[1]) - 10, y: colY(c0) - 10, w: 20, h: colY(c1) - colY(c0) + 20}};
+  }
+  if ((m = /^rail:(a|j)([+-])$/.exec(at))) {
+    const y = railY(m[1], m[2]);
+    return {x: rowHint ? rowX(rowHint) : rowX(rows[0]), y, box: {x: X0 - 14, y: y - 8, w: rowX(rows[1]) - X0 + 28, h: 16}};
+  }
+  return null;
+}
+const rowOf = (at) => { const m = /^(\d+)/.exec(at || ""); return m ? +m[1] : null; };
+
+// ---------- drawing ----------
+function svgEl(tag, attrs, text) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function computeRows() {
+  const used = [];
+  for (const p of lab?.parts || []) for (const h of Object.values(p.pins || {})) { const r = rowOf(h); if (r) used.push(r); }
+  if (!used.length) { rows = [1, 30]; return; }
+  let lo = Math.max(1, Math.min(...used) - 4), hi = Math.min(63, Math.max(...used) + 4);
+  while (hi - lo < 30) { if (lo > 1) lo--; if (hi - lo < 30 && hi < 63) hi++; if (lo === 1 && hi === 63) break; }
+  rows = [lo, hi];
+}
+function drawBoard() {
+  const svg = $("board");
+  svg.replaceChildren();
+  const w = rowX(rows[1]) + 30;
+  svg.setAttribute("viewBox", `0 0 ${w} ${railY("j", "-") + 24}`);
+  const defs = svgEl("defs", {}), mk = svgEl("marker", {id: "arrow", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse"});
+  mk.append(svgEl("path", {d: "M0,0 L10,5 L0,10 z", fill: "var(--attention)"})); defs.append(mk); svg.append(defs);
+  svg.append(svgEl("rect", {x: 8, y: 8, width: w - 16, height: railY("j", "-") + 8, rx: 10, fill: "#1d212b", stroke: "#2c3240"}));
+  for (const [side, sign, col] of [["a", "+", "#c0392b"], ["a", "-", "#2e5fb3"], ["j", "+", "#c0392b"], ["j", "-", "#2e5fb3"]]) {
+    const y = railY(side, sign);
+    svg.append(svgEl("line", {x1: X0 - 14, x2: rowX(rows[1]) + 14, y1: y - 9, y2: y - 9, stroke: col, "stroke-width": 1.5, opacity: .7}));
+    svg.append(svgEl("text", {x: 14, y: y + 4, fill: col, "font-size": 12, "font-weight": 700}, sign));
+    for (let r = rows[0]; r <= rows[1]; r++) svg.append(holeEl(rowX(r), y, `rail:${side}${sign}`));
+  }
+  for (let r = rows[0]; r <= rows[1]; r++) {
+    svg.append(svgEl("text", {x: rowX(r), y: TOP - 14, fill: "#6b7388", "font-size": 10, "text-anchor": "middle"}, r));
+    for (const c of COLS) svg.append(holeEl(rowX(r), colY(c), `${r}${c}`));
+  }
+  for (const c of COLS) svg.append(svgEl("text", {x: X0 - 22, y: colY(c) + 4, fill: "#6b7388", "font-size": 10}, c));
+  const parts = svgEl("g", {id: "parts"}); svg.append(parts);
+  for (const p of lab?.parts || []) drawPart(parts, p);
+  svg.append(svgEl("g", {id: "ov"}));
+  svg.append(svgEl("g", {id: "pr"}));
+  drawOverlays(); drawProbes();
+}
+function holeEl(x, y, id) {
+  const c = svgEl("circle", {cx: x, cy: y, r: 3.4, class: "hole" + (board?.available ? " click" : "")});
+  c.dataset.at = id;
+  c.addEventListener("click", () => board?.available && boardCmd(`${selProbe} ${id.startsWith("rail") ? id : id}`));
+  c.append(svgEl("title", {}, id));
+  return c;
+}
+function pinXY(p) {
+  const pins = Object.entries(p.pins || {});
+  const hint = pins.map(([, h]) => rowOf(h)).find((r) => r);
+  return pins.map(([name, h]) => ({name, ...where(h, hint)}));
+}
+function drawPart(g, p) {
+  const pts = pinXY(p); if (pts.length < 2 || pts.some((q) => !q.x)) return;
+  const [a, b] = pts, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const color = {red: "#e0473c", black: "#cfcfcf", blue: "#4b8bff", green: "#3fbf6f", yellow: "#f2c230"}[p.color] || "#c9a46a";
+  const pg = svgEl("g", {"data-ref": p.ref});
+  if (p.kind === "wire") {
+    pg.append(svgEl("path", {d: `M${a.x},${a.y} Q${mx},${Math.min(a.y, b.y) - 24} ${b.x},${b.y}`, stroke: color, "stroke-width": 4, fill: "none", "stroke-linecap": "round", opacity: .9}));
+  } else {
+    pg.append(svgEl("line", {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: "#b7bcc8", "stroke-width": 2.5}));
+    if (p.kind === "resistor") pg.append(svgEl("rect", {x: mx - 16, y: my - 7, width: 32, height: 14, rx: 6, fill: "#d8b47a"}));
+    else if (p.kind === "led") pg.append(svgEl("circle", {cx: mx, cy: my, r: 9, fill: color, opacity: .9}));
+    else pg.append(svgEl("circle", {cx: mx, cy: my, r: 9, fill: "#c77d2e"}));
+    if (p.kind === "led") {
+      const an = pts.find((q) => q.name === "anode");
+      if (an) pg.append(svgEl("text", {x: an.x, y: an.y - 8, fill: "#ffb3ad", "font-size": 11, "text-anchor": "middle", "font-weight": 700}, "+"));
+    }
+  }
+  const label = p.ref + (p.value_ohm ? ` ${p.value_ohm >= 1000 ? p.value_ohm / 1000 + "k" : p.value_ohm}Ω` : "");
+  pg.append(svgEl("text", {x: mx, y: (p.kind === "wire" ? Math.min(a.y, b.y) - 16 : my - 13), fill: "#cfd5e2", "font-size": 10.5, "text-anchor": "middle"}, label));
+  g.append(pg);
+}
+function mark(g, at, color, {pulse, label, ref} = {}) {
+  const cls = pulse ? "pulse" : "";
+  if (ref) {
+    const part = (lab?.parts || []).find((p) => p.ref === ref); if (!part) return;
+    const [a, b] = pinXY(part);
+    g.append(svgEl("line", {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: color, "stroke-width": 14, "stroke-linecap": "round", opacity: .35, class: cls}));
+    return;
+  }
+  const p = where(at); if (!p) return;
+  if (p.box) g.append(svgEl("rect", {x: p.box.x, y: p.box.y, width: p.box.w, height: p.box.h, rx: 8, fill: color, opacity: .28, stroke: color, "stroke-width": 2, class: cls}));
+  else g.append(svgEl("circle", {cx: p.x, cy: p.y, r: 9, fill: "none", stroke: color, "stroke-width": 3, class: cls}));
+  if (label) g.append(svgEl("text", {x: p.x + 12, y: (p.box ? p.box.y : p.y) - 4, fill: color, "font-size": 11, "font-weight": 700}, label));
+}
+function drawOverlays() {
+  const g = document.getElementById("ov"); if (!g) return;
+  g.replaceChildren();
+  for (const it of overlays.values()) {
+    const color = STYLE[it.style] || "var(--attention)";
+    if (it.kind === "component") mark(g, null, color, {pulse: it.pulse, ref: it.ref});
+    else if (it.kind === "arrow") {
+      const a = where(it.from), b = where(it.to); if (!a || !b) continue;
+      g.append(svgEl("line", {x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: color, "stroke-width": 3, "marker-end": "url(#arrow)"}));
+    } else mark(g, it.at, color, {pulse: it.pulse, label: it.kind === "label" ? it.text : null});
+  }
+  for (const e of Object.values(expects)) {
+    if (!e.at) continue;
+    const band = e.expected_mv != null ? ` expect ${(e.expected_mv / 1000).toFixed(1)} V` : "";
+    mark(g, e.at, `var(--${e.probe})`, {pulse: true, label: `${e.probe}${band}`});
+  }
+}
+function drawProbes() {
+  const g = document.getElementById("pr"); if (!g || !board?.probes) return;
+  g.replaceChildren();
+  for (const [p, at] of Object.entries(board.probes)) {
+    if (!at) continue;
+    const q = where(at); if (!q) continue;
+    g.append(svgEl("circle", {cx: q.x, cy: q.y, r: 5.5, fill: `var(--${p})`, stroke: "#000", "stroke-width": 1.5}));
+  }
+}
+
+// ---------- gauges ----------
+function drawGauges() {
+  $("gauges").innerHTML = PROBES.map((p, i) => {
+    const mv = probes?.mv?.[i], e = expects[p];
+    const out = board?.available && !board.probes?.[p];  // the mock knows the probe is lying on the desk
+    const v = mv == null ? "–" : mv < 0 || out ? "not plugged in" : `${(mv / 1000).toFixed(2)} V`;
+    const exp = e?.at ? `asked for ${e.at}${e.expected_mv != null ? ` · expect ${(e.expected_mv / 1000).toFixed(2)} ± ${(e.tol_mv / 1000).toFixed(2)} V` : ""}` : "";
+    const pct = (x) => Math.max(0, Math.min(100, x / 5000 * 100));
+    const band = e?.expected_mv != null ? `<div class="band" style="left:${pct(e.expected_mv - e.tol_mv)}%;width:${pct(e.expected_mv + e.tol_mv) - pct(e.expected_mv - e.tol_mv)}%"></div>` : "";
+    const needle = mv != null && mv >= 0 && !out ? `<div class="needle" style="left:calc(${pct(mv)}% - 1px)"></div>` : "";
+    return `<div class="gauge" style="border-top:3px solid var(--${p})"><div class="note">${NAMES[p]}</div><div class="v">${v}</div>
+            <div class="exp">${esc(exp)}</div><div class="bar">${band}${needle}</div></div>`;
+  }).join("");
+}
+
+// ---------- conversation + feed ----------
+function addMsg(role, text, final) {
+  const box = $("msgs");
+  if (role === "bench" && !final) {
+    if (!live) { live = document.createElement("div"); live.className = "msg bench live"; box.append(live); }
+    live.textContent = text;
+  } else {
+    if (role === "bench" && live) { live.remove(); live = null; }
+    const d = document.createElement("div"); d.className = `msg ${role}`; d.textContent = text; box.append(d);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+function feed(kind, cls, html) {
+  const f = $("feed");
+  if (f.firstElementChild?.classList.contains("note")) f.replaceChildren();
+  const d = document.createElement("div"); d.className = "item";
+  d.innerHTML = `<span class="k ${cls}">${kind}</span>${html}`;
+  f.append(d); f.scrollTop = f.scrollHeight;
+}
+function pretty(s) { try { return JSON.stringify(JSON.parse(s), null, 1); } catch { return s; } }
+function onBrain(m) {
+  switch (m.kind) {
+    case "hello": $("model").textContent = m.model ? `brain: ${m.model}${m.fast ? " (fast mode)" : ""}` : "demo UI mode (no agent)"; break;
+    case "ptt": feed("button", "time", m.down ? "talk button down: recording" : "talk button up"); break;
+    case "stt": feed("ears", "time", `Cartesia heard “${esc(m.text)}” in ${(m.ms / 1000).toFixed(2)} s`); break;
+    case "turn": feed("Claude is given", "turn", m.source === "event"
+        ? `a probe event: <i>[event] ${esc(m.text)}</i>` : `the student's words: “${esc(m.text)}”`); break;
+    case "tool": feed(m.error ? "tool error" : "Claude calls", m.error ? "err" : "tool",
+        `<b>${esc(m.name)}</b> ${esc(JSON.stringify(m.input))}<pre>→ ${esc(pretty(m.result))}</pre>`); break;
+    case "claude": feed("Claude", "time", `answered in ${(m.ms / 1000).toFixed(2)} s (first token ${m.ttft_ms != null ? (m.ttft_ms / 1000).toFixed(2) : "–"} s) · ${m.cache_read ?? 0} tokens from cache · ${m.output} out`); break;
+    case "turn_end": feed("Bench says", "reply", m.silent ? "<i>(nothing: stays silent)</i>" : `“${esc(m.reply)}”`); break;
+    case "monitor": feed("probe monitor", "monitor", esc(m.text)); break;
+    case "filler": feed("voice", "time", "filler line while Claude thinks"); break;
+    case "first_audio": feed("voice", "time", `Cartesia's first audio ${m.ms} ms after the text`); break;
+  }
+}
+
+// ---------- sockets ----------
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => ws.send(JSON.stringify({type: "hello", client: "brain-view"}));
+  ws.onclose = () => { $("state").textContent = "disconnected"; $("state").className = "badge error"; setTimeout(connect, 1000); };
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    switch (m.type) {
+      case "lab": lab = m.lab; expects = {}; overlays.clear(); computeRows(); $("lab").value = lab.id; drawBoard(); drawGauges(); refreshBoard();
+        fetch("/brain/system").then((r) => r.text()).then((t) => $("system").textContent = t); break;
+      case "state": $("state").textContent = m.value + (m.detail ? ` · ${m.detail}` : ""); $("state").className = `badge ${m.value}`; break;
+      case "transcript": addMsg(m.role, m.text, m.final); break;
+      case "expect": if (m.clear) delete expects[m.probe]; else expects[m.probe] = m; drawOverlays(); drawGauges(); break;
+      case "overlay": if (m.mode === "replace") overlays.clear(); for (const it of m.items) overlays.set(it.id, it); drawOverlays(); break;
+      case "overlay_clear": overlays.clear(); drawOverlays(); break;
+      case "probes": probes = m; drawGauges(); break;
+      case "request_frame": sendFrame(m.id); break;
+      case "error": addMsg("system", m.message, true); break;
+    }
+  };
+}
+const brainWs = () => { const b = new WebSocket(`ws://${location.host}/brain/ws`); b.onmessage = (e) => onBrain(JSON.parse(e.data)); b.onclose = () => setTimeout(brainWs, 1000); };
+const send = (o) => ws?.readyState === 1 && ws.send(JSON.stringify(o));
+
+// ---------- talk ----------
+let down = false;
+const ptt = (d) => { if (d === down) return; down = d; $("talk").classList.toggle("down", d); $("talk").textContent = d ? "Listening… release to send" : "Hold to talk (or hold Space)"; send({type: "ptt", down: d}); };
+$("talk").addEventListener("pointerdown", (e) => { e.preventDefault(); ptt(true); });
+addEventListener("pointerup", () => ptt(false));
+addEventListener("keydown", (e) => { if (e.code === "Space" && !e.repeat && document.activeElement.tagName !== "INPUT") { e.preventDefault(); ptt(true); } });
+addEventListener("keyup", (e) => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT") ptt(false); });
+$("text").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.value.trim()) { send({type: "text", text: e.target.value.trim()}); e.target.value = ""; } });
+$("reset").onclick = () => send({type: "reset"});
+$("lab").onchange = (e) => send({type: "select_lab", lab_id: e.target.value});
+
+// ---------- the board (mock pod) ----------
+async function refreshBoard() {
+  board = await (await fetch("/brain/board")).json();
+  $("controls").style.display = board.available ? "flex" : "none";
+  if (!board.available) { $("boardnote").dataset.real || ($("boardnote").textContent += " (Real pod: probe controls are hidden.)"); $("boardnote").dataset.real = 1; return; }
+  $("chips").innerHTML = PROBES.map((p) => `<span class="chip ${p === selProbe ? "sel" : ""}" data-p="${p}" style="background:var(--${p})">${p}</span>`).join("");
+  $("chips").querySelectorAll(".chip").forEach((c) => c.onclick = () => { selProbe = c.dataset.p; refreshBoard(); });
+  $("fault").innerHTML = board.faults.map((f) => `<option value="${f.id}" ${f.id === board.fault ? "selected" : ""}>${esc(f.name)}</option>`).join("")
+    + `<option value="" ${!board.fault ? "selected" : ""}>(none: correct circuit)</option>`;
+  const lightLab = (lab?.parts || []).some((p) => p.kind === "photoresistor");
+  $("lightbox").style.display = lightLab ? "flex" : "none";
+  document.querySelectorAll(".hole").forEach((h) => h.classList.add("click"));
+  drawProbes();
+}
+async function boardCmd(cmd) {
+  const r = await fetch("/brain/board", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({cmd})});
+  if (!r.ok) { addMsg("system", (await r.json()).detail, true); return; }
+  board = await r.json(); refreshBoard();
+}
+$("unplug").onclick = () => boardCmd("unplug all");
+$("stage").onclick = () => boardCmd($("fault").value ? `fault ${$("fault").value}` : "fix");
+$("fix").onclick = () => boardCmd("fix");
+$("light").oninput = (e) => { const v = +e.target.value; $("lightv").textContent = v === 0 ? "covered" : v === 1 ? "flashlight" : v === 0.5 ? "room" : v; boardCmd(`light ${v}`); };
+
+// ---------- camera ----------
+async function loadSamples() {
+  const names = await (await fetch("/brain/samples")).json();
+  $("sample").innerHTML = names.map((n) => `<option>${n}</option>`).join("");
+  $("sample").onchange = () => $("photo").src = `/brain/samples/${$("sample").value}`;
+  if (names.length) $("photo").src = `/brain/samples/${names[0]}`;
+}
+async function sendFrame(id) {
+  if (!$("sendphoto").checked) return;  // no answer: Bench is told the camera didn't respond, and uses the probes
+  const img = $("photo"); await img.decode();
+  const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const b64 = c.toDataURL("image/jpeg", 0.85).split(",")[1];
+  send({type: "frame", id, jpeg_b64: b64, w: c.width, h: c.height});
+  $("cam").classList.add("looked"); setTimeout(() => $("cam").classList.remove("looked"), 2500);
+  feed("camera", "tool", `sent this photo to Bench (${c.width}×${c.height})`);
+}
+
+// ---------- start ----------
+(async () => {
+  const labs = await (await fetch("/labs")).json();
+  $("lab").innerHTML = labs.map((l) => `<option value="${l.id}">${esc(l.title)}</option>`).join("");
+  $("system").textContent = await (await fetch("/brain/system")).text();
+  loadSamples(); drawGauges(); connect(); brainWs();
+  setInterval(() => board?.available && fetch("/brain/board").then((r) => r.json()).then((b) => { board = b; drawProbes(); }), 1500);
+})();
+</script>
+</body>
+</html>

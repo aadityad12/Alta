@@ -5,6 +5,7 @@ import pytest
 
 from bench import bus as ev
 from bench.bus import Event
+from bench.agent import GLITCH_LINE
 from bench.protocol import State
 from bench.voice_out import SentenceSplitter, Speaker, _aiter, normalize, sentences_of
 
@@ -169,13 +170,43 @@ def test_reply_after_tool_results_is_spoken_while_streaming():
     assert of(sent, "transcript")[-1] == {"type": "transcript", "role": "bench", "text": "Row 10 reads 5 V. What should it read?", "final": True}
 
 
-def test_first_round_text_before_a_tool_call_is_not_spoken():
+def test_speak_first_text_is_spoken_while_the_tools_run():
     agent, sp, sent = streaming_agent(
-        msg("Let's find where the power stops.", tool("clear_highlights")),
-        msg("Let's find where the power stops. Put the yellow probe in 10c."),
+        msg("Let's find where the power stops. Put the yellow probe in 10c.", tool("ask_for_probe", probe="Y", at="10c")),
     )
     asyncio.run(agent.turn("my LED is dark"))
     assert pushed(sp) == ["Let's find where the power stops. ", "Put the yellow probe in row 10, column c. "]
+    assert states(sent) == ["thinking", "speaking", "idle"]
+
+
+def test_slow_turn_gets_a_filler_line_first():
+    async def slow(kwargs):
+        await asyncio.sleep(0.15)
+        return msg("Row 10 reads 5 V.")
+
+    agent, sp, sent = streaming_agent(slow)
+    agent.filler_s = 0.05
+    asyncio.run(agent.turn("what does it read?"))
+    assert pushed(sp) == ["Mm, let me check. ", "Row 10 reads 5 volts. "]
+    assert states(sent) == ["thinking", "speaking", "idle"]
+
+
+def test_no_filler_for_probe_events_or_quick_turns():
+    agent, sp, _ = streaming_agent(msg("Quick one."), msg("<silent>"))
+    agent.filler_s = 0.05
+    asyncio.run(agent.turn("hi"))
+    asyncio.run(agent.turn(event="Yellow probe now reads 5 V."))
+    assert pushed(sp) == ["Quick one. "]
+
+
+def test_filler_then_silent_ends_idle():
+    async def slow(kwargs):
+        await asyncio.sleep(0.15)
+        return msg("<silent>")
+
+    agent, sp, sent = streaming_agent(slow)
+    agent.filler_s = 0.05
+    assert asyncio.run(agent.turn("hm")) is None
     assert states(sent) == ["thinking", "speaking", "idle"]
 
 
@@ -238,3 +269,20 @@ def test_sentence_splitter_waits_for_the_end_of_a_sentence():
     assert sp.feed(" work! Is it") == ["Nice work!"]
     assert sp.flush() == ["Is it"]
     assert sentences_of("One. Two? Three") == ["One.", "Two?", "Three"]
+
+
+def test_a_turn_that_fails_fast_never_says_the_filler():
+    agent, sp, sent = streaming_agent(RuntimeError("network"))
+    agent.filler_s = 0.2
+    assert asyncio.run(agent.turn("hi")) == GLITCH_LINE
+    assert "Mm, let me check. " not in pushed(sp)
+
+
+def test_emotion_goes_into_generation_config():
+    agent, _, _ = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1", emotion="content")
+    sp._conn = FakeConn()
+    asyncio.run(sp.say("Nice work!"))
+    assert sp._conn.kwargs[0]["generation_config"] == {"emotion": "content"}

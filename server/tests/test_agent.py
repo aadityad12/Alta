@@ -1,5 +1,6 @@
 import asyncio
 import json
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -48,7 +49,8 @@ def run(coro):
 
 
 def last_tool_results(request):
-    return [c for c in request["messages"][-1]["content"] if c["type"] == "tool_result"]
+    last = next(m for m in reversed(request["messages"]) if m["role"] == "user" and isinstance(m["content"], list))
+    return [c for c in last["content"] if c["type"] == "tool_result"]
 
 
 def assert_history_valid(messages):
@@ -64,7 +66,9 @@ def assert_history_valid(messages):
 
 # ---------- request shape ----------
 
-def test_request_uses_documented_settings():
+def test_request_uses_documented_settings(monkeypatch):
+    monkeypatch.delenv("BENCH_MODEL", raising=False)  # not whatever the local .env says
+    monkeypatch.delenv("BENCH_SPEED", raising=False)
     agent, fake, _ = make(msg("Hi! What are you working on?"))
     run(agent.turn("hello"))
     r = fake.requests[0]
@@ -186,7 +190,7 @@ def test_tool_rounds_are_capped_and_history_stays_valid():
     run(agent.turn("loop forever"))
     assert len(fake.requests) == agent_mod.MAX_ROUNDS + 1
     assert fake.requests[-1]["messages"][-1] == {"role": "system", "content": OUT_OF_ROUNDS}
-    assert "system" not in [m["role"] for r in fake.requests[:-1] for m in r["messages"]]
+    assert OUT_OF_ROUNDS not in [m["content"] for r in fake.requests[:-1] for m in r["messages"] if m["role"] == "system"]
     assert_history_valid(agent.messages)
 
 
@@ -268,12 +272,76 @@ def test_typed_text_runs_a_turn_over_the_websocket():
         inbox.state("idle")
 
 
-def test_only_the_last_text_is_spoken_not_narration_before_tool_calls():
-    agent, _, sent = make(
-        msg("Let's find out where the power stops.", tool("ask_for_probe", probe="Y", at="10c")),
-        msg("Let's find where the power stops. Put the yellow probe in row 10."),
-    )
-    assert run(agent.turn("dark LED")) == "Let's find where the power stops. Put the yellow probe in row 10."
+def test_speak_first_round_ends_the_turn_without_a_second_request():
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c"),
+                              tool("record_diagnosis", fault_id="unknown", confidence=0.3, evidence="-",
+                                   hint_level=1, resolved=False)))
+    assert run(agent.turn("dark LED")) == "Put the yellow probe in row 10."
+    assert len(fake.requests) == 1
+    last = agent.messages[-1]  # the results wait for the next message
+    assert last["role"] == "user" and [c["type"] for c in last["content"]] == ["tool_result", "tool_result"]
+    assert agent.bench.session.expects["Y"].at == "10c"  # the tools still ran
+
+
+def test_the_next_message_joins_the_unsent_tool_results():
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c")),
+                          msg("Good, that's the reading we need."))
+    run(agent.turn("dark LED"))
+    run(agent.turn(event="Yellow probe now reads a steady 4986 mV."))
+    sent = fake.requests[1]["messages"]
+    assert [m["role"] for m in sent] == ["user", "assistant", "user"]  # never two user messages in a row
+    assert [c["type"] for c in sent[-1]["content"]] == ["tool_result", "text"]
+    assert sent[-1]["content"][-1]["text"] == "[event] Yellow probe now reads a steady 4986 mV."
+    assert_history_valid(agent.messages)
+
+
+def test_a_failed_turn_after_a_speak_first_turn_rolls_back_cleanly():
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c")),
+                          RuntimeError("network"), msg("Okay."))
+    run(agent.turn("dark LED"))
+    assert run(agent.turn("what now?")) == GLITCH_LINE
+    assert [c["type"] for c in agent.messages[-1]["content"]] == ["tool_result"]  # the text came back out
+    run(agent.turn("what now?"))
+    assert [c["type"] for c in fake.requests[2]["messages"][-1]["content"]] == ["tool_result", "text"]
+
+
+def test_spoken_text_before_read_probes_gets_a_second_round_that_knows_what_was_said():
+    agent, fake, _ = make(msg("Let me check the probes.", tool("read_probes")),
+                          msg("Row 10 reads 5 volts."), probes=[4990, -1, -1, -1])
+    assert run(agent.turn("what does it read?")) == "Let me check the probes. Row 10 reads 5 volts."
+    note = fake.requests[1]["messages"][-1]
+    assert note["role"] == "system" and "Let me check the probes." in note["content"]
+
+
+def test_a_silent_side_effect_round_is_told_the_student_heard_nothing():
+    agent, fake, _ = make(msg(tool("record_diagnosis", fault_id="unknown", confidence=0.3, evidence="-",
+                                   hint_level=1, resolved=False)), msg("What does row 10 read?"))
+    assert run(agent.turn("help")) == "What does row 10 read?"
+    note = fake.requests[1]["messages"][-1]
+    assert note["role"] == "system" and "hasn't heard anything" in note["content"]
+
+
+def test_a_tool_error_in_a_speak_first_round_gets_another_round():
+    agent, fake, _ = make(msg("Look at row 10.", tool("highlight", items=[], mode="replace")),
+                          msg("<silent>"))
+    assert run(agent.turn("help")) == "Look at row 10."
+    assert len(fake.requests) == 2 and fake.requests[1]["messages"][-2]["content"][0]["is_error"] is True
+
+
+def test_prewarm_sends_the_cached_prefix_with_max_tokens_zero():
+    agent, fake, _ = make()
+    calls = []
+
+    async def create(**kw):
+        calls.append(kw)
+        return SimpleNamespace(usage=SimpleNamespace(cache_creation_input_tokens=7000, cache_read_input_tokens=0))
+
+    fake.create = create
+    run(agent.prewarm())
+    kw = calls[0]
+    assert kw["max_tokens"] == 0 and "cache_control" not in kw  # breakpoint on the system prompt, not the placeholder
+    assert kw["system"][0]["cache_control"] == {"type": "ephemeral"} and kw["tools"] == TOOLS
+    assert kw["thinking"] == {"type": "adaptive"} and kw["output_config"] == {"effort": "low"}
 
 
 def test_text_from_an_earlier_round_is_used_if_the_last_round_has_none():

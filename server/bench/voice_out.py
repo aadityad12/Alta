@@ -8,8 +8,12 @@ stop() (barge-in, reset) silences the speaker at once and drops the rest of what
     uv run python -m bench.voice_out "Row 10 reads 1.92 V, so the LED is on."   # hear it + timing
     uv run python -m bench.voice_out --list-devices
 
+    uv run python -m bench.voice_out --audition            # the same Bench lines in 9 voices, to pick one
+    uv run python -m bench.voice_out --audition --emotion content
+
 Env: CARTESIA_VOICE_ID (default: a placeholder until #36 picks one), BENCH_VOICE_SPEED (0.6-1.5),
-BENCH_TTS_MODEL, SPEAKER_DEVICE (empty = system default output, index or name substring).
+BENCH_VOICE_EMOTION (empty = inferred from the text; e.g. content, calm, happy), BENCH_TTS_MODEL,
+SPEAKER_DEVICE (empty = system default output, index or name substring).
 """
 
 import argparse
@@ -34,6 +38,17 @@ log = logging.getLogger(__name__)
 TTS_RATE = 24_000
 TTS_MODEL = os.environ.get("BENCH_TTS_MODEL", "sonic-3.5")
 DEFAULT_VOICE = "30894953-bcce-41fe-892c-15ce19c843ff"  # "Parker", casual and supportive: placeholder for #36
+# Candidates for #36: Cartesia's list of voices that respond best to emotion, plus the placeholder.
+AUDITION_VOICES = {
+    "Parker": DEFAULT_VOICE,
+    "Kyle": "c961b81c-a935-4c17-bfb3-ba2239de8c2f", "Jace": "6776173b-fd72-460d-89b3-d85812ee518d",
+    "Leo": "0834f3df-e650-4766-a20c-5a93a43aa6e3", "Gavin": "f4a3a8e4-694c-4c45-9ca0-27caf97901b5",
+    "Tessa": "6ccbfb76-1fc6-48f7-b71d-91ac6298247b", "Maya": "cbaf8084-f009-4838-a096-07ee2e6612b1",
+    "Dana": "cc00e582-ed66-4004-8336-0175b85c85f6", "Marian": "26403c37-80c1-4a1a-8692-540551ca2ae5",
+}
+AUDITION_LINES = ("Okay, let's find where the power stops. Put the yellow probe in row 10, right where the "
+                  "resistor meets the LED. Nice, that's it! Row 10 is at about 1.9 volts now, so current's "
+                  "flowing, and you found it yourself.")
 OUTPUT_FORMAT = {"container": "raw", "encoding": "pcm_s16le", "sample_rate": TTS_RATE}
 TTS_TIMEOUT_S = 10.0
 
@@ -188,7 +203,7 @@ class Speaker:
     agent turn), so a turn that's still writing can't start talking again after the student cut in."""
 
     def __init__(self, session: Session, player: Player, *, client=None, voice_id: str | None = None,
-                 model: str = TTS_MODEL, speed: float | None = None) -> None:
+                 model: str = TTS_MODEL, speed: float | None = None, emotion: str | None = None) -> None:
         self.session = session
         self.player = player
         self.voice_id = voice_id or os.environ.get("CARTESIA_VOICE_ID") or DEFAULT_VOICE
@@ -196,6 +211,7 @@ class Speaker:
         if speed is None and os.environ.get("BENCH_VOICE_SPEED"):
             speed = float(os.environ["BENCH_VOICE_SPEED"])
         self.speed = speed
+        self.emotion = emotion if emotion is not None else (os.environ.get("BENCH_VOICE_EMOTION", "").strip() or None)
         self.timings: list[float] = []  # seconds from the first text sent to its first audio heard
         self._client = client
         self._conn = None
@@ -294,7 +310,8 @@ class Speaker:
     async def _open_context(self):
         try:
             conn = await self.connect()
-            kw = {"generation_config": {"speed": self.speed}} if self.speed else {}
+            gen = {k: v for k, v in (("speed", self.speed), ("emotion", self.emotion)) if v}
+            kw = {"generation_config": gen} if gen else {}
             self._ctx = conn.context(
                 model_id=self.model, voice={"id": self.voice_id}, output_format=OUTPUT_FORMAT, language="en",
                 max_buffer_delay_ms=0,  # we send whole sentences: start each one right away (default waits 3 s)
@@ -378,6 +395,21 @@ async def _say(text: str) -> None:
     player.close()
 
 
+async def _audition(emotion: str | None) -> None:
+    session = Session(broadcast=_noop)
+    player = Player(output_device(os.environ.get("SPEAKER_DEVICE")))
+    player.open()
+    for name, voice_id in AUDITION_VOICES.items():
+        speaker = Speaker(session, player, voice_id=voice_id, emotion=emotion)
+        print(f"{name:<7} {voice_id}" + (f" · emotion {emotion}" if emotion else ""), flush=True)
+        session.state = State.thinking
+        await speaker.say(f"Hi, I'm {name}. {AUDITION_LINES}")
+        await speaker.close()
+        await asyncio.sleep(0.6)
+    player.close()
+    print("Pick one: CARTESIA_VOICE_ID=<id> in .env (and BENCH_VOICE_EMOTION if you used one).")
+
+
 async def _noop(msg) -> None:
     pass
 
@@ -390,9 +422,13 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="bench.voice_out", description="Hear Bench's voice.")
     p.add_argument("text", nargs="?")
     p.add_argument("--list-devices", action="store_true")
+    p.add_argument("--audition", action="store_true", help="the same Bench lines in each candidate voice")
+    p.add_argument("--emotion", default=None, help="with --audition: e.g. content, calm, happy, enthusiastic")
     args = p.parse_args()
     if args.list_devices:
         _list_devices()
+    elif args.audition:
+        asyncio.run(_audition(args.emotion))
     elif args.text:
         asyncio.run(_say(args.text))
     else:
