@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" font-family="sans-serif" font-size="12">
+  <!-- Demo schematic. Net element ids match lab.yaml nets (CONTRACTS §6). -->
+  <g id="n_5v" stroke="#c00" stroke-width="3" fill="none"><path d="M40 40 H120"/></g>
+  <text x="20" y="35">5 V</text>
+  <rect x="120" y="30" width="60" height="20" fill="none" stroke="#333" stroke-width="2"/>
+  <text x="130" y="25">R1 220 Ω</text>
+  <g id="n_led_anode" stroke="#d80" stroke-width="3" fill="none"><path d="M180 40 H240 V80"/></g>
+  <path d="M225 80 H255 L240 105 Z" fill="none" stroke="#333" stroke-width="2"/>
+  <path d="M225 105 H255" stroke="#333" stroke-width="2"/>
+  <text x="262" y="98">D1</text>
+  <g id="n_gnd" stroke="#333" stroke-width="3" fill="none"><path d="M240 105 V150 H40"/></g>
+  <text x="20" y="165">GND</text>
+</svg>

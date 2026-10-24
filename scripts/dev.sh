@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Start the server (:8000) and the web app (:5173) together. Ctrl-C stops both.
+# Extra args go to the server, e.g. `scripts/dev.sh --demo-ui` (no pod, no keys: fake data for the UI).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,7 +16,7 @@ command -v npm >/dev/null || { echo "Need Node.js 20+ (brew install node)"; exit
 cleanup() { trap - INT TERM EXIT; kill 0 2>/dev/null; }
 trap cleanup INT TERM EXIT
 
-(cd "$ROOT/server" && uv run uvicorn bench.main:app --reload --port 8000) &
+(cd "$ROOT/server" && uv run python -m bench "$@") &
 (cd "$ROOT/web" && npm run dev) &
 
 wait
