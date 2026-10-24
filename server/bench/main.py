@@ -15,6 +15,7 @@ from . import bus as ev
 from .bus import Event
 from .hub import Bench
 from .labs import load_labs
+from .pod import OFF, PodBridge
 from .protocol import BadMessage, ErrorOut, parse_inbound
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -26,11 +27,18 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(m
 log = logging.getLogger("bench")
 
 
-def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR) -> FastAPI:
+def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_port: str | None = None) -> FastAPI:
+    """pod_port: serial device path, "off" for no pod, or None to use POD_PORT / auto-detect."""
     if demo_ui is None:
         demo_ui = os.environ.get("BENCH_DEMO_UI") == "1"
+    if pod_port is None:
+        pod_port = os.environ.get("POD_PORT", "").strip() or None
     roots = [labs_dir, DEMO_LABS_DIR] if demo_ui else [labs_dir]
     bench = Bench(load_labs(*roots))
+    use_pod = not demo_ui and (pod_port or "").lower() not in OFF
+    pod = PodBridge(bench.bus, pod_port) if use_pod else None
+    if pod:
+        bench.session.pod_command = pod.send
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -39,13 +47,18 @@ def create_app(*, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR) -> Fas
         if demo_ui:
             from .demo import run_demo
             tasks.append(asyncio.create_task(run_demo(bench)))
+        if pod:
+            pod.start(asyncio.get_running_loop())
         yield
+        if pod:
+            pod.stop()
         for t in tasks:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
     app = FastAPI(title="Bench", lifespan=lifespan)
     app.state.bench = bench
+    app.state.pod = pod
 
     @app.get("/health")
     def health() -> dict:
