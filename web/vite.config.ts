@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    fs: { allow: ['..'] }, // /dev/board reads docs/samples and labs/ from the repo root
     proxy: {
       '/ws': { target: SERVER, ws: true },
       '/labs': SERVER,

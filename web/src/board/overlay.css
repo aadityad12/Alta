@@ -1,0 +1,77 @@
+/* Overlay engine (#11). The SVG sits exactly on top of the <video>/<img>; see BoardOverlay.tsx. */
+
+.bo-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bo-shape {
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.65));
+}
+
+.bo-pulse {
+  animation: bo-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes bo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bo-pulse {
+    animation: none;
+  }
+}
+
+.bo-pill {
+  font: 600 1em system-ui, sans-serif;
+}
+
+.bo-ghost {
+  fill: rgb(34 211 238 / 0.75); /* cyan reads on the white board and on dark wood */
+  stroke: rgb(8 51 68 / 0.6);
+}
+
+.bo-cal {
+  pointer-events: all;
+  cursor: crosshair;
+}
+
+.bo-handle {
+  cursor: grab;
+}
+
+.bo-handle:active {
+  cursor: grabbing;
+}
+
+.bo-cal-bar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgb(15 23 42 / 0.88);
+  color: #f8fafc;
+  font: 14px system-ui, sans-serif;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.bo-cal-bar input {
+  width: 3.5em;
+}
