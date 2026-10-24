@@ -23,7 +23,7 @@ def recv_until(ws, type_, limit=200):
 @pytest.fixture
 def client():
     """Normal mode, with the bundled demo lab standing in for labs/."""
-    with TestClient(create_app(demo_ui=False, labs_dir=DEMO_LABS_DIR)) as c:
+    with TestClient(create_app(demo_ui=False, labs_dir=DEMO_LABS_DIR, pod_port="off")) as c:
         yield c
 
 
@@ -45,7 +45,7 @@ def test_connect_sends_lab_state_and_step(client):
 
 
 def test_no_labs_is_an_error_not_a_crash(tmp_path):
-    with TestClient(create_app(demo_ui=False, labs_dir=tmp_path)) as c, c.websocket_connect("/ws") as ws:
+    with TestClient(create_app(demo_ui=False, labs_dir=tmp_path, pod_port="off")) as c, c.websocket_connect("/ws") as ws:
         assert ws.receive_json() == {"type": "error", "message": "no labs found in labs/"}
         assert c.get("/health").json() == {"ok": True}
 
