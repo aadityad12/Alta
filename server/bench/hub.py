@@ -85,7 +85,7 @@ class Bench:
     # ---------- clients ----------
 
     async def connect(self, ws: WebSocket) -> None:
-        """Bring a new client up to date: lab, state, step, latest probes, pending expects."""
+        """Bring a new client up to date: lab, state, step, latest probes, pending expects, health."""
         self.hub.clients.add(ws)
         s = self.session
         if self.lab:
@@ -98,6 +98,7 @@ class Bench:
             await self.hub.send(ws, self._probes_msg())
         for e in s.expects.values():
             await self.hub.send(ws, e)
+        await self.hub.send(ws, s.health.msg())
 
     def disconnect(self, ws: WebSocket) -> None:
         self.hub.clients.discard(ws)
@@ -172,10 +173,12 @@ class Bench:
         s.record("pod", connected=connected)
         if connected:
             log.info("pod connected")
+            await s.health.ok("pod")
             if s.state is State.error and s.detail == POD_DISCONNECTED:
                 await s.set_state(State.idle)
         else:
             log.warning("pod disconnected")
+            await s.health.down("pod", "USB link lost")
             await s.set_state(State.error, POD_DISCONNECTED)
 
     async def select_lab(self, lab_id: str) -> None:

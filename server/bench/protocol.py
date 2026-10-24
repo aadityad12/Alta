@@ -108,6 +108,15 @@ class ErrorOut(_Msg):
     message: str
 
 
+class HealthOut(_Msg):
+    """What's broken right now (#31). Sent on connect and on every change; see bench/health.py."""
+    type: Literal["health"] = "health"
+    pod: Literal["ok", "down", "off"]
+    ai: Literal["ok", "down", "off"]
+    voice: Literal["ok", "down", "off"]
+    fix: dict[str, str] = {}  # part -> the one line to show while it's down
+
+
 # ---------- web -> server ----------
 
 class HelloIn(_Msg):

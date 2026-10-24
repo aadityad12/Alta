@@ -93,6 +93,15 @@ def test_stt_failure_says_didnt_catch_that_and_flags_error():
     assert [m["text"] for m in of(sent, "transcript")] == [DIDNT_CATCH] and turns == []
 
 
+def test_stt_failure_puts_voice_down_until_it_hears_again():
+    bench, voice, stt, sent, turns = setup(RuntimeError("503"))
+    asyncio.run(talk(bench, voice))
+    stt.reply = "my LED won't light"
+    asyncio.run(talk(bench, voice))
+    assert [m["voice"] for m in of(sent, "health")] == ["down", "ok"]
+    assert "voice" in of(sent, "health")[0]["fix"]
+
+
 def test_reset_while_transcribing_drops_the_clip():
     bench, voice, stt, sent, turns = setup("hello", delay=0.05)
 
