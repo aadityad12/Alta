@@ -14,6 +14,8 @@ scripts/dev.sh
 - Server: http://localhost:8000 (`/health` → `{"ok": true}`, WebSocket at `/ws`)
 - Web: http://localhost:5173
 
+No pod or API keys yet? `scripts/dev.sh --demo-ui` runs the server on fake data: probes, overlays, captions and states loop on a demo copy of Lab 1.
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs
