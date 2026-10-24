@@ -10,6 +10,8 @@
 //                    vcc 4987                        set the supply (AVcc) in mV
 //                    noise 3                         ±mV of noise on every conversion
 //                    btn down | btn up | btn [ms]    press / release / tap the talk button
+//                    bounce                          a bouncy press: 8 × 1 ms chatter, held 300 ms
+//                    reset                           reboot the MCU (DTR reset / brown-out)
 //                    status | quit
 //   flags: -a  LED is common-anode (pins are active-low)  ·  -v  echo UART output to stdout
 #include <errno.h>
@@ -48,7 +50,11 @@ static int noise_mv = 3;
 static unsigned char rx_q[512];
 static int rx_len;
 static int led[3];          // pin levels of D9 (R), D10 (G), D11 (B)
+static int led_dirty;       // pins changed; print once the instruction that changed them is done
+static avr_cycle_count_t led_cycle;
 static int button_release_ms = -1;
+static int bounce_left;                 // chatter steps left (1 per ms) for `bounce`
+static int pace_rebase;                 // avr_reset() zeroes the cycle counter: restart pacing
 
 static void cleanup(void) {
     char target[256];
@@ -111,7 +117,10 @@ static void led_pin(struct avr_irq_t *irq, uint32_t value, void *param) {
     int i = (int)(intptr_t)param;
     if (led[i] == (int)value) return;
     led[i] = (int)value;
-    print_led();
+    // One PORTB write can flip several pins; simavr reports them one by one. Print the
+    // combined color once, after this cycle.
+    led_dirty = 1;
+    led_cycle = avr->cycle;
 }
 
 static void set_button(int down) {
@@ -142,6 +151,14 @@ static void command(char *line) {
             set_button(1);
             button_release_ms = (int)sim_ms() + (arg[0] ? atoi(arg) : 300);
         }
+    } else if (!strcmp(what, "bounce")) {
+        printf("[%7u ms] bounce start\n", sim_ms());
+        bounce_left = 8;
+    } else if (!strcmp(what, "reset")) {
+        printf("[%7u ms] reset\n", sim_ms());
+        avr_reset(avr);
+        pace_rebase = 1;
+        avr_raise_irq(avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('D'), 2), 1);
     } else if (!strcmp(what, "status")) {
         printf("probes Y %d B %d G %d W %d mV · vcc %u mV · sim %u ms\n", probe_mv[0], probe_mv[1],
                probe_mv[2], probe_mv[3], avr->avcc, sim_ms());
@@ -239,6 +256,10 @@ int main(int argc, char **argv) {
     avr_cycle_count_t next_poll = 0, next_byte = 0;
     for (;;) {
         int state = avr_run(avr);
+        if (led_dirty && avr->cycle != led_cycle) {
+            led_dirty = 0;
+            print_led();
+        }
         if (state == cpu_Done || state == cpu_Crashed) {
             fprintf(stderr, "firmware stopped (state %d) at %u ms\n", state, sim_ms());
             return 1;
@@ -251,11 +272,22 @@ int main(int argc, char **argv) {
         if (avr->cycle >= next_poll) {
             next_poll = avr->cycle + POLL_CYCLES;
             poll_io();
+            if (bounce_left) {   // pin chatters 1 ms at a time, then stays pressed
+                bounce_left--;
+                avr_raise_irq(avr_io_getirq(avr, AVR_IOCTL_IOPORT_GETIRQ('D'), 2), bounce_left & 1);
+                if (!bounce_left) button_release_ms = (int)sim_ms() + 300;
+            }
             if (button_release_ms >= 0 && (int)sim_ms() >= button_release_ms) {
                 button_release_ms = -1;
                 set_button(0);
             }
-            // Real-time pacing: never run ahead of the wall clock.
+            // Real-time pacing: never run ahead of (or race to catch up with) the wall clock.
+            if (pace_rebase) {
+                pace_rebase = 0;
+                t0 = now_us() - avr->cycle / (F_CPU / 1000000);
+                next_poll = avr->cycle + POLL_CYCLES;
+                next_byte = avr->cycle;
+            }
             uint64_t sim_us = avr->cycle / (F_CPU / 1000000);
             uint64_t wall_us = now_us() - t0;
             if (sim_us > wall_us + 2000) usleep((useconds_t)(sim_us - wall_us));

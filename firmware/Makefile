@@ -1,6 +1,6 @@
 # Bench probe pod firmware (bare-metal C, ATmega328P / Arduino Uno).
 #
-#   make                 build build/bench.hex
+#   make                 build build/cc/bench.hex (build/ca/… with LED=ca)
 #   make flash           flash it (auto-detects the Uno; or PORT=/dev/cu.usbmodemXXXX)
 #   make size            flash/RAM use
 #   make test            host unit tests for the protocol, maths and debounce (no hardware)
@@ -11,9 +11,10 @@
 
 MCU    := atmega328p
 F_CPU  := 16000000UL
-BUILD  := build
-TARGET := $(BUILD)/bench
 LED    ?= cc
+# Each LED variant builds into its own folder, so switching never mixes objects.
+BUILD  := build/$(LED)
+TARGET := $(BUILD)/bench
 BAUD   ?= 115200
 PORT   ?= $(firstword $(wildcard /dev/cu.usbmodem* /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/ttyACM* /dev/ttyUSB*))
 
@@ -36,7 +37,7 @@ LDFLAGS := -mmcu=$(MCU) -Wl,--gc-sections
 SRCS := $(wildcard src/*.c)
 OBJS := $(SRCS:src/%.c=$(BUILD)/%.o)
 
-.PHONY: all flash size test sim monitor clean
+.PHONY: all flash size test sim check monitor clean
 all: $(TARGET).hex
 
 $(BUILD)/%.o: src/%.c | $(BUILD)
@@ -77,11 +78,15 @@ $(BUILD)/sim_pod: sim/sim_pod.c | $(BUILD)
 sim: $(TARGET).elf $(BUILD)/sim_pod
 	$(BUILD)/sim_pod $(TARGET).elf $(SIMFLAGS)
 
+# Real firmware in simavr ↔ the server's real serial bridge (needs server/ set up with uv).
+check: $(TARGET).elf $(BUILD)/sim_pod
+	cd ../server && uv run python ../firmware/sim/check_firmware.py ../firmware/$(TARGET).elf ../firmware/$(BUILD)/sim_pod $(if $(filter ca,$(LED)),-a)
+
 monitor:
 	@test -n "$(PORT)" || { echo "No Uno found. Pass PORT=..."; exit 1; }
 	python3 -m serial.tools.miniterm $(PORT) 115200
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf build
 
 -include $(OBJS:.o=.d)
