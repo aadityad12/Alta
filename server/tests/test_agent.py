@@ -66,7 +66,9 @@ def assert_history_valid(messages):
 
 # ---------- request shape ----------
 
-def test_request_uses_documented_settings():
+def test_request_uses_documented_settings(monkeypatch):
+    monkeypatch.delenv("BENCH_MODEL", raising=False)  # not whatever the local .env says
+    monkeypatch.delenv("BENCH_SPEED", raising=False)
     agent, fake, _ = make(msg("Hi! What are you working on?"))
     run(agent.turn("hello"))
     r = fake.requests[0]
