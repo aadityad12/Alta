@@ -1,0 +1,22 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# web
+node_modules/
+dist/
+
+# firmware build output
+*.hex
+*.elf
+*.o
+
+# misc
+recordings/
+.DS_Store
