@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse
 
 from . import bus as ev
 from .agent import Agent
+from .brain import MockBoard, mount
 from .bus import Event
 from .hub import Bench
 from .labs import load_labs
@@ -44,11 +45,12 @@ def create_app(
         pod_port = os.environ.get("POD_PORT", "").strip() or None
     roots = [labs_dir, DEMO_LABS_DIR] if demo_ui else [labs_dir]
     bench = Bench(load_labs(*roots))
-    use_pod = not demo_ui and (pod_port or "").lower() not in OFF
+    mock_board = not demo_ui and (pod_port or "").lower() == "mock"  # the mock pod in-process, for /brain
+    use_pod = not demo_ui and not mock_board and (pod_port or "").lower() not in OFF
     pod = PodBridge(bench.bus, pod_port) if use_pod else None
     if pod:
         bench.session.pod_command = pod.send
-    agent = None if demo_ui else Agent(bench, pod_connected=lambda: bool(pod and pod.connected))
+    agent = None if demo_ui else Agent(bench, pod_connected=lambda: mock_board or bool(pod and pod.connected))
     monitor = Monitor(bench) if agent else None  # probe changes -> agent turns, no button press (#21)
     if mic is None:
         mic = os.environ.get("MIC_DEVICE", "")
@@ -97,6 +99,8 @@ def create_app(
             tasks.append(asyncio.create_task(run_demo(bench)))
         if pod:
             pod.start(asyncio.get_running_loop())
+        if board:
+            tasks.append(asyncio.create_task(board.run()))
         if use_speaker:
             bench.speaker = await open_speaker()
         if use_mic:
@@ -122,6 +126,8 @@ def create_app(
         await asyncio.gather(*tasks, return_exceptions=True)
 
     app = FastAPI(title="Bench", lifespan=lifespan)
+    board = MockBoard(bench, labs_dir) if mock_board else None
+    app.state.brain = mount(app, bench, agent, board)  # dev page: /brain
     app.state.bench = bench
     app.state.pod = pod
     app.state.agent = agent
