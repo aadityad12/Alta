@@ -1,0 +1,4 @@
+# Correct circuit. LED lit, row 10 ≈ 1.9 V. Format: labs/README.md
+lab: lab1-led
+fault: null
+probes: {Y: "10c"}

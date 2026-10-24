@@ -1,0 +1,4 @@
+# D1 flipped: no current, so row 10 reads the full 5 V. Format: labs/README.md
+lab: lab1-led
+fault: led_reversed
+probes: {Y: "10c"}

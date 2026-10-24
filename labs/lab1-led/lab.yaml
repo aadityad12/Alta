@@ -1,0 +1,92 @@
+# Lab 1 · Light an LED — Bench's answer key for this lab.
+# Schema: docs/CONTRACTS.md §6 (issue #2). Hole strings: §4.
+# Lives in rows 5–15 of the lab breadboard; Lab 2 shares the same board in rows 25–35.
+#
+# Values are DRAFT (from datasheet math) until measured on the real board with the
+# pod (#4 verify step, #38). Then update expected_mv / tol_mv / readings and set
+# verified: true.
+#
+# Circuit: 5 V rail → W1 → row 6 → R1 220 Ω → row 10 → D1 (anode→cathode) → row 13 → W2 → GND rail
+#   I ≈ (5.0 V − 1.9 V) / 220 Ω ≈ 14 mA
+#
+# The LED cathode row (n_led_cathode) is its own net, separate from the ground rail,
+# even though W2 joins them in the correct circuit. That's the only way the
+# missing_ground_wire fault can read differently from the correct circuit.
+
+id: lab1-led
+title: "Lab 1 · Light an LED"
+supply_mv: 5000
+
+parts:
+  - {ref: W1, kind: wire, color: red, pins: {"1": "rail:a+", "2": "6a"}}
+  - {ref: R1, kind: resistor, value_ohm: 220, pins: {"1": "6c", "2": "10c"}}
+  - {ref: D1, kind: led, color: red, pins: {anode: "10d", cathode: "13d"}}
+  - {ref: W2, kind: wire, color: black, pins: {"1": "13a", "2": "rail:a-"}}
+
+nets:
+  - {id: n_5v,          label: "5 V",         holes: ["rail:a+", "6:a-e"], expected_mv: 5000, tol_mv: 250}
+  # Red LED forward voltage at ~14 mA. Kept tight so it doesn't overlap wrong_resistor_10k (~1650).
+  - {id: n_led_anode,   label: "LED anode",   holes: ["10:a-e"],           expected_mv: 1900, tol_mv: 150}
+  - {id: n_led_cathode, label: "LED cathode", holes: ["13:a-e"],           expected_mv: 0,    tol_mv: 100}
+  - {id: n_gnd,         label: "Ground",      holes: ["rail:a-"],          expected_mv: 0,    tol_mv: 100}
+
+steps:
+  - {n: 1, title: "Power the rails",   nets: [n_5v]}
+  - {n: 2, title: "Add the resistor",  nets: [n_5v]}
+  - {n: 3, title: "Add the LED",       nets: [n_led_anode]}
+  - {n: 4, title: "Connect to ground", nets: [n_led_anode, n_led_cathode, n_gnd]}
+
+# readings = what each net reads with the fault staged (every net listed).
+# Note: led_reversed and led_leg_off_by_one read the same on every net. The probes
+# can't tell them apart, so Bench has to look at the board (look_at_board) or
+# probe row 11.
+faults:
+  - id: led_reversed
+    name: "LED in backwards"
+    how_to_stage: "Flip D1: long leg (anode) into 13d, short leg (cathode) into 10d."
+    symptom: "LED stays dark."
+    readings: {n_5v: 5000, n_led_anode: 5000, n_led_cathode: 0, n_gnd: 0}
+    root_cause: "An LED only lets current flow one way, from the long leg (anode) to the short leg (cathode). Reversed, no current flows, so the resistor drops nothing and row 10 sits at the full 5 V."
+    hints:
+      - "L1 nudge: The LED's dark, so let's find where the power stops. What do you expect row 10 to read?"
+      - "L2 question: Row 10 reads the full 5 volts. If current were flowing through the resistor, what would it do to the voltage?"
+      - "L3 point: The resistor looks fine, so check the LED in rows 10 and 13. Which of its legs is longer, and which row is it in?"
+      - "L4 fix: The LED is in backwards. Put the long leg (anode) in row 10, next to the resistor, and the short leg in row 13."
+
+  - id: wrong_resistor_10k
+    name: "10 kΩ resistor instead of 220 Ω"
+    how_to_stage: "Swap R1 for the 10 kΩ (brown-black-orange) in the same holes, 6c and 10c."
+    symptom: "LED is very dim, maybe only visible up close."
+    readings: {n_5v: 5000, n_led_anode: 1650, n_led_cathode: 0, n_gnd: 0}
+    root_cause: "10 kΩ is about 45× more resistance than 220 Ω, so only ≈0.3 mA flows instead of ≈14 mA. At such a small current the LED barely glows and its forward voltage drops to ≈1.65 V."
+    hints:
+      - "L1 nudge: It lights, just barely. What sets how much current goes through the LED?"
+      - "L2 question: Row 10 reads about 1.65 volts, a bit lower than the 1.9 we expected. What does that tell you about how much current is flowing?"
+      - "L3 point: Take a look at the resistor between rows 6 and 10. Can you read its color bands?"
+      - "L4 fix: That's a 10 kΩ, brown-black-orange. Swap it for the 220 Ω, red-red-brown."
+
+  - id: led_leg_off_by_one
+    name: "LED leg one row off"
+    how_to_stage: "Move D1's long leg (anode) from 10d to 11d. The short leg stays in 13d."
+    symptom: "LED stays dark."
+    readings: {n_5v: 5000, n_led_anode: 5000, n_led_cathode: 0, n_gnd: 0}
+    root_cause: "Row 10 holds only the resistor's end. The LED is plugged into row 11, which isn't connected to anything, so the circuit is open. No current flows, and row 10 sits at 5 V."
+    hints:
+      - "L1 nudge: The LED's dark, so let's find where the power stops. What do you expect row 10 to read?"
+      - "L2 question: Row 10 reads the full 5 volts, so no current is flowing. What has to share row 10 with the resistor for current to get through?"
+      - "L3 point: Look closely at where the LED's long leg goes in. Is it really in the same row as the resistor's end?"
+      - "L4 fix: The long leg is in row 11, one row off. Move it up to row 10 so it shares the row with the resistor."
+
+  - id: missing_ground_wire
+    name: "Missing ground wire"
+    how_to_stage: "Pull out W2, the black wire from 13a to the ground rail."
+    symptom: "LED stays dark."
+    readings: {n_5v: 5000, n_led_anode: 5000, n_led_cathode: 3500, n_gnd: 0}
+    root_cause: "With no path from row 13 back to ground, the loop is open and no current flows. Row 10 sits at 5 V, and row 13 floats, so its reading drifts and jumps around."
+    hints:
+      - "L1 nudge: The LED's dark. Current needs a full loop. Let's trace it from 5 V back to ground."
+      - "L2 question: Row 13 should be at 0 volts, but it's reading something high and jumpy. What does a jumpy reading usually mean?"
+      - "L3 point: Follow row 13. What should connect it to the ground rail?"
+      - "L4 fix: The ground wire is missing. Add a black wire from 13a to the ground rail."
+
+verified: false

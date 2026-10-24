@@ -1,0 +1,7 @@
+# Probe in row 34 (ground) instead of row 30, so the circuit itself is fine. The mock
+# models it as n_out stuck at 0 V with no light response (no light_model), so the
+# `light` command does nothing. Format: labs/README.md
+lab: lab2-light
+fault: output_probe_wrong_row
+light_model: null
+probes: {Y: "30c"}

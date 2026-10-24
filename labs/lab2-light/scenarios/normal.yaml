@@ -1,0 +1,6 @@
+# Correct divider: sensor on top, 10 kΩ on the bottom. Room light ≈ 3.6 V,
+# covered → low, flashlight → high. Format: labs/README.md
+lab: lab2-light
+fault: null
+light_model: {net: n_out, sensor_on: top, fixed_ohm: 10000, sensor_ohm: {dark: 200000, room: 4000, bright: 300}}
+probes: {Y: "30c"}

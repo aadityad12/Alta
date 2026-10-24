@@ -1,0 +1,6 @@
+# Sensor on the bottom, 10 kΩ on top: works backwards. Room ≈ 1.4 V, covering
+# raises it toward 5 V. Format: labs/README.md
+lab: lab2-light
+fault: parts_swapped
+light_model: {net: n_out, sensor_on: bottom, fixed_ohm: 10000, sensor_ohm: {dark: 200000, room: 4000, bright: 300}}
+probes: {Y: "30c"}

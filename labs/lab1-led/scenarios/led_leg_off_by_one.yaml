@@ -1,0 +1,7 @@
+# D1's anode moved to 11d: row 10 reads 5 V, and row 11 (in no net) holds only the LED
+# anode, which floats down toward ground through the LED. Format: labs/README.md
+lab: lab1-led
+fault: led_leg_off_by_one
+holes:
+  "11:a-e": {mv: 100, noise_mv: 100}
+probes: {Y: "10c"}
