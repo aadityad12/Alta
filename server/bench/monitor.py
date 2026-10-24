@@ -179,4 +179,6 @@ class Monitor:
             return  # never talk over the student, or over Bench
         events = [e for _, e in sorted(self.pending.values(), key=lambda x: x[0])]
         self.pending.clear()
-        self.bench.bus.publish(Event(ev.MONITOR, " ".join(e.text for e in events)))
+        text = " ".join(e.text for e in events)
+        self.bench.session.record("monitor", text=text)
+        self.bench.bus.publish(Event(ev.MONITOR, text))

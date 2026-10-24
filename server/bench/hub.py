@@ -27,6 +27,7 @@ from .protocol import (
     StepIn,
     _Msg,
 )
+from .recorder import Recorder
 from .session import Session
 
 log = logging.getLogger(__name__)
@@ -71,6 +72,10 @@ class Bench:
         self._probes_dirty = False
         self.voice = None  # VoiceIn (#18) when a mic is open; without one the talk button only shows listening
         self.speaker = None  # Speaker (#19) when TTS is on
+        self.recorder = Recorder.from_env()  # session log (#23); None when BENCH_RECORD_DIR=off
+        if self.recorder:
+            self.session.record = self.recorder
+            self.recorder.start(self.session.lab_id)
         self.frame_waiters: dict[str, asyncio.Future] = {}  # request_frame id -> the look_at_board call waiting (#20)
 
     @property
@@ -145,6 +150,7 @@ class Bench:
 
     async def _handle_ptt(self, down: bool) -> None:
         s = self.session
+        s.record("ptt", down=down)
         if down:
             if s.state is State.error:
                 await s.set_state(State.idle)  # the student is trying again
@@ -163,6 +169,7 @@ class Bench:
 
     async def _handle_pod_status(self, connected: bool) -> None:
         s = self.session
+        s.record("pod", connected=connected)
         if connected:
             log.info("pod connected")
             if s.state is State.error and s.detail == POD_DISCONNECTED:
@@ -185,6 +192,8 @@ class Bench:
             self.speaker.stop()
         pending = list(s.expects)
         s.clear()
+        if self.recorder:
+            self.recorder.start(s.lab_id)  # a new student gets a new log
         if self.lab:
             await self.hub.broadcast(LabOut(lab=self.lab.wire()))
         await self.hub.broadcast(OverlayClearOut())

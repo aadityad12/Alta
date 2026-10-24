@@ -20,6 +20,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -89,6 +90,7 @@ class Agent:
         # Speaker.speak (#19): (sentences, owner=, end_idle=) -> what was said. None = speak whole replies.
         self.speak_stream: Callable[..., Awaitable[str]] | None = None
         self._live: list[_LiveSpeech] = []
+        self._text_seen = False  # this turn's first text delta seen yet (latency mark, #22)
         self._reply_live = False
         self._lock = asyncio.Lock()
         self._gen = bench.session.generation
@@ -145,6 +147,8 @@ class Agent:
             gen, msgs = s.generation, self.messages
             start = len(msgs)
             self.tools.new_turn(None if event is not None else text)
+            s.record("turn", source="event" if event is not None else "student", text=event if event is not None else text)
+            self._text_seen = False
             if event is not None:
                 msgs.append({"role": "user", "content": f"[event] {event}"})
             else:
@@ -169,6 +173,7 @@ class Agent:
             if s.generation != gen:
                 return None
             await self._finish_live()
+            s.record("turn_end", reply=reply, silent=not reply or reply.strip() == SILENT)
             if not reply or reply.strip() == SILENT:
                 if s.state is State.thinking:
                     await s.set_state(State.idle)
@@ -223,6 +228,7 @@ class Agent:
             results = []
             for b in tool_uses:
                 content, is_error = await self.tools.run(b.name, b.input)
+                self.bench.session.record("tool", name=b.name, input=b.input, error=content if is_error else None)
                 if self.on_tool_call:
                     self.on_tool_call(b.name, b.input, content, is_error)
                 result = {"type": "tool_result", "tool_use_id": b.id, "content": content}
@@ -233,6 +239,7 @@ class Agent:
         return spoken
 
     async def _request(self, msgs: list, live: "_LiveSpeech | None" = None):
+        t0, first = time.monotonic(), None
         async with self.client.beta.messages.stream(
             model=self.model,
             max_tokens=MAX_TOKENS,
@@ -245,18 +252,29 @@ class Agent:
             betas=[FALLBACK_BETA],
             fallbacks="default",
         ) as stream:
-            if live is not None:
-                try:
-                    async for event in stream:
-                        if event.type == "text":
+            try:
+                async for event in stream:  # read as it streams: latency marks (#22) and live speech (#19)
+                    if first is None:
+                        first = time.monotonic()
+                    if event.type == "text":
+                        if not self._text_seen:
+                            self._text_seen = True
+                            self.bench.session.record("first_text")
+                        if live is not None:
                             live.feed(event.text)
-                        elif event.type == "content_block_start" and event.content_block.type == "tool_use" and live.task:
-                            log.warning("spoke text before a tool call; the next round's reply will follow it")
-                finally:
+                    elif (live is not None and event.type == "content_block_start"
+                          and event.content_block.type == "tool_use" and live.task):
+                        log.warning("spoke text before a tool call; the next round's reply will follow it")
+            finally:
+                if live is not None:
                     live.end()
             resp = await stream.get_final_message()
         self.usage.append(resp.usage)
         u = resp.usage
+        self.bench.session.record(
+            "claude", ms=round((time.monotonic() - t0) * 1000), ttft_ms=round((first - t0) * 1000) if first else None,
+            stop=resp.stop_reason, model=resp.model, input=u.input_tokens, output=u.output_tokens,
+            cache_read=u.cache_read_input_tokens, cache_write=u.cache_creation_input_tokens)
         log.info("claude %s: stop=%s in=%s cache_read=%s cache_write=%s out=%s blocks=%s", resp.model, resp.stop_reason,
                  u.input_tokens, u.cache_read_input_tokens, u.cache_creation_input_tokens, u.output_tokens,
                  ",".join(b.type for b in resp.content if b.type != "thinking"))

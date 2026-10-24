@@ -43,10 +43,15 @@ async def _no_pod(cmd: str) -> None:
     log.debug("no pod connected, dropping %r", cmd)
 
 
+def _no_record(kind: str, **fields: Any) -> None:
+    pass
+
+
 @dataclass
 class Session:
     broadcast: Broadcast
     pod_command: PodCommand = _no_pod
+    record: Callable[..., None] = _no_record  # the session log (recorder.Recorder, #23)
 
     lab_id: str | None = None
     step: int = 1
@@ -66,6 +71,7 @@ class Session:
             log.warning("refused state change %s -> %s", self.state.value, new.value)
             return False
         self.state, self.detail = new, detail
+        self.record("state", value=new.value, detail=detail)
         await self.broadcast(StateOut(value=new, detail=detail))
         await self.pod_command(f"LED {LED_FOR_STATE[new]}")
         return True
@@ -74,9 +80,11 @@ class Session:
         msg = TranscriptOut(role=role, text=text, final=final)
         if final:
             self.transcript.append(msg)
+            self.record("transcript", role=role, text=text)
         await self.broadcast(msg)
 
     async def expect(self, msg: ExpectOut) -> None:
+        self.record("expect", **msg.wire())
         if msg.clear:
             self.expects.pop(msg.probe, None)
         else:

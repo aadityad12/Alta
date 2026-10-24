@@ -28,6 +28,8 @@ Check the mic and speech-to-text: `cd server && uv run python -m bench.voice_in 
 
 Hear Bench's voice: `cd server && uv run python -m bench.voice_out "Row 10 reads 1.92 V."` (prints the time to first audio). Pick the voice and speaker with `CARTESIA_VOICE_ID`, `BENCH_VOICE_SPEED` and `SPEAKER_DEVICE` in `.env`.
 
+Every student session is logged to `recordings/<time>-<lab>.jsonl` (gitignored; `BENCH_RECORD_DIR=off` turns it off), and each spoken turn's latency is printed in the server log. Summarize the logs: `cd server && uv run python -m bench.metrics ../recordings/*.jsonl` (turns, probes, hint level, time to fix, latency).
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs
