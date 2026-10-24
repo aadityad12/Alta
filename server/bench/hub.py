@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 from fastapi import WebSocket
@@ -110,6 +111,7 @@ class Bench:
     async def handle(self, event: Event) -> None:
         if event.kind == ev.POD_SAMPLE:
             self.session.probes = event.data
+            self.session.probes_at = time.monotonic()
             self._probes_dirty = True
         elif event.kind == ev.UI:
             await self._handle_ui(event.data, event.client)

@@ -50,9 +50,11 @@ class Session:
     lab_id: str | None = None
     step: int = 1
     probes: dict[str, Any] | None = None  # latest pod sample line
+    probes_at: float | None = None  # time.monotonic() when it arrived
     expects: dict[str, ExpectOut] = field(default_factory=dict)  # probe -> pending request
     hint_levels: dict[str, int] = field(default_factory=dict)  # fault_id -> highest hint level given
     transcript: list[TranscriptOut] = field(default_factory=list)
+    diagnoses: list[dict[str, Any]] = field(default_factory=list)  # record_diagnosis log (metrics, #23/#24)
     state: State = State.idle
     detail: str | None = None
     generation: int = 0  # bumped on every reset, so long-running tasks can notice
@@ -86,4 +88,5 @@ class Session:
         self.expects.clear()
         self.hint_levels.clear()
         self.transcript.clear()
+        self.diagnoses.clear()
         self.generation += 1
