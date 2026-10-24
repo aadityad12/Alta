@@ -13,6 +13,9 @@ log = logging.getLogger(__name__)
 # Event kinds
 POD_SAMPLE = "pod_sample"  # data: the pod's sample line (dict, CONTRACTS §2)
 POD_EVENT = "pod_event"    # data: the pod's event line, e.g. {"evt":"btn","down":1,"t":...}
+POD_HELLO = "pod_hello"    # data: the pod's boot line, e.g. {"hello":"bench-pod","fw":"0.1.0",...}
+POD_STATUS = "pod_status"  # data: True when the pod (re)connects, False when it drops out
+PTT = "ptt"                # data: True = talk pressed, False = released. From the pod button or the UI.
 UI = "ui"                  # data: a parsed web->server message (protocol.*In)
 MONITOR = "monitor"        # data: probe-change event (#21)
 
