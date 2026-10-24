@@ -24,6 +24,8 @@ It loads every YAML file and rebuilds the circuit's connectivity from the parts 
 
 ## Placement (one 830-point board serves both labs)
 
+Diagram: `docs/visuals/lab-placement-v1.html`. Regenerate it after editing a lab with `uv run labs/render_placement.py`.
+
 Power comes from the pod's red/black wires onto the rails next to column **a** (`rail:a+` = 5 V, `rail:a-` = GND).
 
 **Lab 1 · LED** (rows 5–15)
