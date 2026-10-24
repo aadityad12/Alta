@@ -16,6 +16,12 @@ scripts/dev.sh
 
 No pod or API keys yet? `scripts/dev.sh --demo-ui` runs the server on fake data: probes, overlays, captions and states loop on a demo copy of Lab 1.
 
+Talk to Bench by typing (no voice or browser; needs `ANTHROPIC_API_KEY` in `.env`):
+
+```sh
+cd server && uv run python -m bench.cli --lab lab1-led --pod off   # or --pod <mock pod port>
+```
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs
