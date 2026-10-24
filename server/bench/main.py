@@ -19,6 +19,7 @@ from .labs import load_labs
 from .pod import OFF, PodBridge
 from .protocol import BadMessage, ErrorOut, parse_inbound
 from .voice_in import MIC_OFF, CartesiaSTT, Mic, VoiceIn, mic_device
+from .voice_out import Player, Speaker, output_device
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LABS_DIR = REPO_ROOT / "labs"
@@ -30,10 +31,12 @@ log = logging.getLogger("bench")
 
 
 def create_app(
-    *, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_port: str | None = None, mic: str | None = None
+    *, demo_ui: bool | None = None, labs_dir: Path = LABS_DIR, pod_port: str | None = None, mic: str | None = None,
+    speaker: str | None = None,
 ) -> FastAPI:
     """pod_port: serial device path, "off" for no pod, or None to use POD_PORT / auto-detect.
-    mic: input device index or name, "off" for no mic, or None to use MIC_DEVICE (empty = system default)."""
+    mic / speaker: device index or name, "off" for none, or None to use MIC_DEVICE / SPEAKER_DEVICE
+    (empty = the system default). With no speaker, Bench's replies are captions only."""
     if demo_ui is None:
         demo_ui = os.environ.get("BENCH_DEMO_UI") == "1"
     if pod_port is None:
@@ -48,6 +51,28 @@ def create_app(
     if mic is None:
         mic = os.environ.get("MIC_DEVICE", "")
     use_mic = agent is not None and mic.strip().lower() not in MIC_OFF
+    if speaker is None:
+        speaker = os.environ.get("SPEAKER_DEVICE", "")
+    use_speaker = agent is not None and speaker.strip().lower() not in MIC_OFF
+
+    async def open_speaker() -> Speaker | None:
+        player = Player(output_device(speaker))
+        try:
+            player.open()
+        except Exception as e:
+            log.error("speaker unavailable (%s); replies are captions only. SPEAKER_DEVICE=%r, see "
+                      "`python -m bench.voice_out --list-devices`", e, speaker)
+            return None
+        if not os.environ.get("CARTESIA_API_KEY"):
+            log.warning("CARTESIA_API_KEY is not set (.env); replies are captions only")
+        sp = Speaker(bench.session, player)
+        try:
+            await sp.connect()  # warm the websocket so the first reply doesn't pay for it
+        except Exception as e:
+            log.warning("tts connect failed (%r); will retry on the first reply", e)
+        log.info("voice: %s · %s", sp.voice_id, sp.model)
+        agent.speak, agent.speak_stream = sp.say, sp.speak
+        return sp
 
     def open_voice() -> VoiceIn | None:
         m = Mic(mic_device(mic))
@@ -70,6 +95,8 @@ def create_app(
             tasks.append(asyncio.create_task(run_demo(bench)))
         if pod:
             pod.start(asyncio.get_running_loop())
+        if use_speaker:
+            bench.speaker = await open_speaker()
         if use_mic:
             bench.voice = open_voice()
         if agent:
@@ -82,6 +109,9 @@ def create_app(
             pod.stop()
         if bench.voice:
             bench.voice.mic.close()
+        if bench.speaker:
+            await bench.speaker.close()
+            bench.speaker.player.close()
         for t in tasks:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)

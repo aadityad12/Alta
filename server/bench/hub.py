@@ -69,6 +69,7 @@ class Bench:
         self.session.lab_id = next(iter(sorted(labs)), None)
         self._probes_dirty = False
         self.voice = None  # VoiceIn (#18) when a mic is open; without one the talk button only shows listening
+        self.speaker = None  # Speaker (#19) when TTS is on
 
     @property
     def lab(self) -> Lab | None:
@@ -141,8 +142,11 @@ class Bench:
         if down:
             if s.state is State.error:
                 await s.set_state(State.idle)  # the student is trying again
+            barge_in = s.state is State.speaking
+            if barge_in and self.speaker:
+                self.speaker.stop()  # stop talking the moment the button goes down
             if s.state in (State.idle, State.speaking) and await s.set_state(State.listening) and self.voice:
-                self.voice.press()
+                self.voice.press(barge_in)
         elif s.state is State.listening:
             if self.voice:
                 self.voice.release()  # -> transcribing -> the agent's turn
@@ -171,6 +175,8 @@ class Bench:
 
     async def _fresh_start(self) -> None:
         s = self.session
+        if self.speaker:
+            self.speaker.stop()
         pending = list(s.expects)
         s.clear()
         if self.lab:

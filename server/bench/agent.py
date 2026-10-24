@@ -10,6 +10,10 @@ API notes (checked against the Claude docs, not guessed):
 - always look at stop_reason before using the content
 - the system prompt is frozen per lab and cached; history is cached with top-level automatic caching
 - assistant turns are appended exactly as returned (thinking blocks included) and never edited
+
+Speech (#19): with speak_stream set, a round that follows tool results is spoken sentence by sentence
+while Claude is still writing it. The first round's text is held until the response ends, because that
+is where Claude sometimes writes text before a tool call, and that text would repeat the real reply.
 """
 
 import asyncio
@@ -25,6 +29,7 @@ import anthropic
 from . import bus as ev
 from .protocol import State, TextIn
 from .tools import TOOLS, ToolBox
+from .voice_out import SentenceSplitter
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +86,10 @@ class Agent:
         self.usage: list[Any] = []  # one entry per API response (latency/caching checks, #22/#23)
         self.on_tool_call: ToolHook | None = None
         self.speak: Callable[[str], Awaitable[None]] = self._speak_text
+        # Speaker.speak (#19): (sentences, owner=, end_idle=) -> what was said. None = speak whole replies.
+        self.speak_stream: Callable[..., Awaitable[str]] | None = None
+        self._live: list[_LiveSpeech] = []
+        self._reply_live = False
         self._lock = asyncio.Lock()
         self._gen = bench.session.generation
         self._system: tuple[str | None, str] | None = None
@@ -141,6 +150,7 @@ class Agent:
                 # "[event]" is the server's marker; a student can't produce one by saying it
                 msgs.append({"role": "user", "content": (text or "").replace("[event]", "(event)").strip()})
             await s.set_state(State.thinking)
+            self._live, self._reply_live, self._owner = [], False, object()
             try:
                 async with asyncio.timeout(TURN_TIMEOUT_S):
                     reply = await self._rounds(msgs, gen)
@@ -157,11 +167,26 @@ class Agent:
                 return await self._fail(gen, GLITCH_LINE, error=True, detail=type(e).__name__)
             if s.generation != gen:
                 return None
+            await self._finish_live()
             if not reply or reply.strip() == SILENT:
-                await s.set_state(State.idle)
+                if s.state is State.thinking:
+                    await s.set_state(State.idle)
                 return None
-            await self.speak(reply)
+            if self._reply_live:
+                if s.state is State.speaking and s.generation == gen:
+                    await s.set_state(State.idle)  # unless the student cut in: then they're talking
+            else:
+                await self.speak(reply)
             return reply
+
+    async def _finish_live(self) -> None:
+        tasks = [l.task for l in self._live if l.task]
+        self._live = []
+        for t in tasks:
+            try:
+                await t
+            except Exception as e:
+                log.warning("speech failed: %r", e)
 
     async def _rounds(self, msgs: list, gen: int) -> str:
         spoken = ""  # the latest round's text: earlier text is narration around tool calls, not the reply
@@ -169,7 +194,10 @@ class Agent:
             last = round_no == MAX_ROUNDS
             if last:
                 msgs.append({"role": "system", "content": OUT_OF_ROUNDS})
-            resp = await self._request(msgs)
+            live = _LiveSpeech(self.speak_stream, self._owner) if self.speak_stream and round_no > 0 else None
+            if live:
+                self._live.append(live)
+            resp = await self._request(msgs, live)
             if self.bench.session.generation != gen:
                 raise _Reset
             if resp.stop_reason == "refusal":
@@ -177,7 +205,7 @@ class Agent:
             msgs.append({"role": "assistant", "content": resp.content})
             text = " ".join(b.text.strip() for b in resp.content if b.type == "text" and b.text.strip())
             if text:
-                spoken = text
+                spoken, self._reply_live = text, live is not None
             tool_uses = [b for b in resp.content if b.type == "tool_use"]
             if not tool_uses:
                 if resp.stop_reason == "pause_turn":
@@ -203,7 +231,7 @@ class Agent:
             msgs.append({"role": "user", "content": results})  # all results in one message
         return spoken
 
-    async def _request(self, msgs: list):
+    async def _request(self, msgs: list, live: "_LiveSpeech | None" = None):
         async with self.client.beta.messages.stream(
             model=self.model,
             max_tokens=MAX_TOKENS,
@@ -216,11 +244,21 @@ class Agent:
             betas=[FALLBACK_BETA],
             fallbacks="default",
         ) as stream:
+            if live is not None:
+                try:
+                    async for event in stream:
+                        if event.type == "text":
+                            live.feed(event.text)
+                        elif event.type == "content_block_start" and event.content_block.type == "tool_use" and live.task:
+                            log.warning("spoke text before a tool call; the next round's reply will follow it")
+                finally:
+                    live.end()
             resp = await stream.get_final_message()
         self.usage.append(resp.usage)
         u = resp.usage
-        log.info("claude %s: stop=%s in=%s cache_read=%s cache_write=%s out=%s", resp.model, resp.stop_reason,
-                 u.input_tokens, u.cache_read_input_tokens, u.cache_creation_input_tokens, u.output_tokens)
+        log.info("claude %s: stop=%s in=%s cache_read=%s cache_write=%s out=%s blocks=%s", resp.model, resp.stop_reason,
+                 u.input_tokens, u.cache_read_input_tokens, u.cache_creation_input_tokens, u.output_tokens,
+                 ",".join(b.type for b in resp.content if b.type != "thinking"))
         return resp
 
     async def _fail(self, gen: int, line: str, *, error: bool, detail: str | None = None) -> str | None:
@@ -239,3 +277,41 @@ class Agent:
         await s.set_state(State.speaking)
         await s.say("bench", text)
         await s.set_state(State.idle)
+
+
+class _LiveSpeech:
+    """One round's text, handed to speak_stream a sentence at a time as Claude writes it."""
+
+    def __init__(self, speak_stream: Callable[..., Awaitable[str]], owner: object) -> None:
+        self._speak, self._owner = speak_stream, owner
+        self._queue: asyncio.Queue[str | None] = asyncio.Queue()
+        self._split = SentenceSplitter()
+        self._held: str | None = ""  # the start of the text, until it can't be SILENT any more
+        self.task: asyncio.Task | None = None
+
+    def feed(self, delta: str) -> None:
+        if self._held is not None:
+            self._held += delta
+            if SILENT.startswith(self._held.strip()):
+                return
+            delta, self._held = self._held, None
+        for sentence in self._split.feed(delta):
+            self._put(sentence)
+
+    def end(self) -> None:
+        if self._held is not None:
+            held, self._held = self._held.strip(), None
+            if held and held != SILENT:
+                self._split.feed(held)
+        for sentence in self._split.flush():
+            self._put(sentence)
+        self._queue.put_nowait(None)
+
+    def _put(self, sentence: str) -> None:
+        if self.task is None:
+            self.task = asyncio.create_task(self._speak(self._sentences(), owner=self._owner, end_idle=False))
+        self._queue.put_nowait(sentence)
+
+    async def _sentences(self):
+        while (sentence := await self._queue.get()) is not None:
+            yield sentence
