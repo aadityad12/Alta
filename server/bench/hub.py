@@ -17,6 +17,7 @@ from .protocol import (
     ManualOut,
     OverlayClearOut,
     ProbesOut,
+    PttIn,
     ResetIn,
     SelectLabIn,
     State,
@@ -29,6 +30,7 @@ from .session import Session
 log = logging.getLogger(__name__)
 
 PROBES_HZ = 10
+POD_DISCONNECTED = "pod disconnected"
 
 
 class Hub:
@@ -111,6 +113,10 @@ class Bench:
             self._probes_dirty = True
         elif event.kind == ev.UI:
             await self._handle_ui(event.data, event.client)
+        elif event.kind == ev.PTT:
+            await self._handle_ptt(event.data)
+        elif event.kind == ev.POD_STATUS:
+            await self._handle_pod_status(event.data)
 
     async def _handle_ui(self, msg: _Msg, client: WebSocket | None) -> None:
         if isinstance(msg, SelectLabIn):
@@ -123,7 +129,29 @@ class Bench:
             self.session.step = msg.step
         elif isinstance(msg, ResetIn):
             await self.reset()
-        # hello / ptt / text / frame are for the voice + agent consumers (#17, #18, #20)
+        elif isinstance(msg, PttIn):
+            self.bus.publish(Event(ev.PTT, msg.down))  # same path as the pod's talk button
+        # hello / text / frame are for the agent consumers (#17, #20)
+
+    async def _handle_ptt(self, down: bool) -> None:
+        s = self.session
+        if down:
+            if s.state is State.error:
+                await s.set_state(State.idle)  # the student is trying again
+            if s.state in (State.idle, State.speaking):
+                await s.set_state(State.listening)
+        elif s.state is State.listening:
+            await s.set_state(State.idle)  # #18 replaces this with transcribing -> STT
+
+    async def _handle_pod_status(self, connected: bool) -> None:
+        s = self.session
+        if connected:
+            log.info("pod connected")
+            if s.state is State.error and s.detail == POD_DISCONNECTED:
+                await s.set_state(State.idle)
+        else:
+            log.warning("pod disconnected")
+            await s.set_state(State.error, POD_DISCONNECTED)
 
     async def select_lab(self, lab_id: str) -> None:
         self.session.lab_id = lab_id
