@@ -16,6 +16,7 @@ from .agent import Agent
 from .bus import Event
 from .hub import Bench
 from .labs import load_labs
+from .monitor import Monitor
 from .pod import OFF, PodBridge
 from .protocol import BadMessage, ErrorOut, parse_inbound
 from .voice_in import MIC_OFF, CartesiaSTT, Mic, VoiceIn, mic_device
@@ -48,6 +49,7 @@ def create_app(
     if pod:
         bench.session.pod_command = pod.send
     agent = None if demo_ui else Agent(bench, pod_connected=lambda: bool(pod and pod.connected))
+    monitor = Monitor(bench) if agent else None  # probe changes -> agent turns, no button press (#21)
     if mic is None:
         mic = os.environ.get("MIC_DEVICE", "")
     use_mic = agent is not None and mic.strip().lower() not in MIC_OFF
@@ -104,6 +106,7 @@ def create_app(
                 log.warning("ANTHROPIC_API_KEY is not set (.env); Bench will answer with its fallback line")
             log.info("agent model: %s", agent.model)
             tasks.append(asyncio.create_task(agent.run()))
+            tasks.append(asyncio.create_task(monitor.run()))
         yield
         if pod:
             pod.stop()
@@ -120,6 +123,7 @@ def create_app(
     app.state.bench = bench
     app.state.pod = pod
     app.state.agent = agent
+    app.state.monitor = monitor
 
     @app.get("/health")
     def health() -> dict:
