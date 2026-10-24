@@ -104,9 +104,11 @@ def create_app(
         if agent:
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 log.warning("ANTHROPIC_API_KEY is not set (.env); Bench will answer with its fallback line")
-            log.info("agent model: %s", agent.model)
+            log.info("agent model: %s%s", agent.model, " (fast mode)" if agent.speed == "fast" else "")
             tasks.append(asyncio.create_task(agent.run()))
             tasks.append(asyncio.create_task(monitor.run()))
+            if os.environ.get("ANTHROPIC_API_KEY"):
+                tasks.append(asyncio.create_task(agent.keep_warm()))  # prompt cache warm for the current lab (#22)
         yield
         if pod:
             pod.stop()
