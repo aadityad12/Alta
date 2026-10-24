@@ -1,0 +1,255 @@
+<!doctype html><html><head><meta charset="utf-8"><style>/* fallback theme so this page renders outside T3 */
+:root{--background:#0d1117;--foreground:#e6edf3;--muted:#21262d;--muted-foreground:#8b949e;--card:#161b22;--card-foreground:#e6edf3;--border:#30363d;--accent:#2f81f7;--accent-foreground:#fff;--destructive:#f85149;--destructive-surface:rgba(248,81,73,.15);--success:#3fb950;--warning:#d29922;--info:#58a6ff;--code-background:#161b22;--code-foreground:#e6edf3;--radius:8px;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+html{background:var(--background)}body{margin:0 auto;padding:24px;max-width:960px}</style><style>
+:root{--y:#e3b505;--b:#3b82f6;--g:#22c55e;--w:#cbd5e1;--r:#ef4444}
+body{font-family:var(--font-sans);color:var(--foreground)}
+.wrap{display:flex;flex-direction:column;gap:26px}
+h3{font-size:15px;margin:0 0 6px;font-weight:600}
+.sub{color:var(--muted-foreground);font-size:13px;margin:0 0 12px;line-height:1.45}
+svg text{font-family:var(--font-sans)}
+.verdict{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--card);font-size:13px;line-height:1.5}
+.verdict b.big{font-size:15px;color:var(--success)}
+.chg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
+.chg div{font-size:12.5px;border-left:3px solid var(--accent);padding:2px 0 2px 8px}
+.chg s{color:var(--muted-foreground)}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.role{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--card);font-size:12.5px;line-height:1.45}
+.role .t{display:flex;gap:8px;align-items:center;font-weight:600;font-size:13.5px}
+.role .as{color:var(--accent);font-size:12px;margin:2px 0 6px 26px}
+.role .mf{color:var(--muted-foreground);margin-top:6px;font-size:12px}
+.n{display:inline-flex;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:var(--accent-foreground);font-size:11px;font-weight:700;align-items:center;justify-content:center;flex:none}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-foreground);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;white-space:nowrap;font-weight:600}
+.have{background:color-mix(in srgb,var(--success) 18%,transparent);color:var(--success)}
+.store{background:color-mix(in srgb,var(--info) 18%,transparent);color:var(--info)}
+.check{background:color-mix(in srgb,var(--warning) 20%,transparent);color:var(--warning)}
+.out{background:var(--destructive-surface);color:var(--destructive)}
+.opt{background:var(--muted);color:var(--muted-foreground)}
+.labs{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:10px}
+.lab{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:var(--card);font-size:12.5px;line-height:1.45}
+.lab .t{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.lab ul{margin:6px 0 0 0;padding-left:16px}
+.lab li{margin:2px 0}
+.k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-foreground);margin-top:8px}
+.mono{font-family:var(--font-mono);font-size:11.5px}
+.print{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:620px){.print{grid-template-columns:1fr}}
+.form td:first-child{color:var(--muted-foreground);width:42%}
+</style></head><body><div class="wrap">
+
+<section class="verdict">
+<b class="big">Yes, this is buildable with what you have.</b> The pod and all the demo-lab parts are already in your hands. You still need: <b>one breadboard from the store</b>, <b>a way to hold a phone over the desk</b>, and possibly <b>an NPN transistor</b> for the optional 4th lab. You don't need anything else.
+<div class="chg">
+<div><s>Pico + ADS1115 chip</s> → <b>your Arduino Uno</b>. It can already measure 0–5 V on 6 pins, so no extra chip is needed.</div>
+<div><s>Logitech webcam</s> (out of stock) → <b>a teammate's phone</b> on a DIY stand.</div>
+<div><s>Separate ground clip</s> → <b>the pod powers the lab board</b>, which keeps everything at a safe 5 V and shares ground automatically.</div>
+<div><s>Printed corner markers</s> → <b>tape the board down and click its 4 corners once</b>. Markers become optional.</div>
+</div>
+</section>
+
+<section>
+<h3>The setup at a glance</h3>
+<p class="sub">Six things on the desk. The table below says what each one does, using a human TA as the comparison.</p>
+<svg id="bench" viewBox="0 48 700 306" width="100%" role="img" aria-label="Bench setup"></svg>
+<div class="roles">
+<div class="role"><div class="t"><span class="n">1</span>Phone camera</div><div class="as">= Bench's eyes</div>Held about 25 cm above the lab board, pointing straight down. It streams video to the laptop so Bench can see where parts are and draw "look here" highlights on the screen. <b>It doesn't measure anything.</b><div class="mf">Made from: a teammate's phone + a DIY stand</div></div>
+<div class="role"><div class="t"><span class="n">2</span>Lab breadboard</div><div class="as">= the student's workbench</div>The circuit the student builds from the lab manual. It's taped down so the camera's view of it never shifts, which keeps the screen highlights lined up.<div class="mf">Made from: 830-pt breadboard (store) + starter-kit parts</div></div>
+<div class="role"><div class="t"><span class="n">3</span>Probe pod</div><div class="as">= a multimeter Bench can read for itself</div>An Arduino that measures the voltage on 4 wires about 20 times a second and sends the numbers to the laptop. It also has the <b>talk button</b> and a <b>status light</b>.<div class="mf">Made from: Uno R3 + kit breadboard, in one 3D-printed dock</div></div>
+<div class="role"><div class="t"><span class="n">4</span>Probe wires</div><div class="as">= the multimeter's tips</div>Four colored wires. When Bench says "put the yellow wire in row 10," the student plugs it in there and the pod reads that row's voltage.<div class="mf">Made from: kit jumper wires, each through a 10 kΩ safety resistor</div></div>
+<div class="role"><div class="t"><span class="n">5</span>Power wires</div><div class="as">= the bench power supply</div>A red and a black wire carry the pod's 5 V and ground to the lab board's rails. The circuit can't go above 5 V, and the pod always shares the circuit's ground, so its readings are correct.<div class="mf">Made from: 2 jumper wires</div></div>
+<div class="role"><div class="t"><span class="n">6</span>Laptop</div><div class="as">= Bench's brain, voice and whiteboard</div>Runs all the software. It takes in the camera feed and probe numbers, asks Claude what to do next, speaks through Cartesia, and shows the live feed with highlights, the manual and the readings.<div class="mf">Made from: your laptop (mic + speaker built in)</div></div>
+</div>
+</section>
+
+<section>
+<h3>Parts check</h3>
+<table>
+<tr><th>What we need</th><th>What we'll use</th><th>Where</th><th>Status</th></tr>
+<tr><td>Brain of the pod</td><td>Arduino Uno R3</td><td>Starter kit</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Voltage measuring</td><td>Uno's built-in analog pins A0–A3 (0–5 V, ~5 mV steps)</td><td>On the Uno</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Probe safety resistors</td><td>4 × 10 kΩ</td><td>Kit (has 5)</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Talk button + status light</td><td>Small button switch, RGB LED + 3 × 220 Ω</td><td>Kit</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Probe + power wires</td><td>Dupont jumper wires</td><td>Kit (+ store "Wires")</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Pod breadboard</td><td>830-pt breadboard</td><td>Kit</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Lab breadboard</td><td>830-pt breadboard</td><td>Hardware store</td><td><span class="pill store">In stock</span></td></tr>
+<tr><td>Demo-lab parts</td><td>LEDs, 220 Ω / 1 kΩ / 10 kΩ, photoresistor, pot, IR receiver + remote, buttons</td><td>Kit</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>NPN transistor (lab 4 only)</td><td>e.g. 2N2222</td><td>Store, "Transistors, diodes &amp; ICs"</td><td><span class="pill check">Check</span></td></tr>
+<tr><td>Overhead camera</td><td>Teammate's phone</td><td>Team</td><td><span class="pill have">In hand</span></td></tr>
+<tr><td>Phone stand</td><td>Books + a stiff board, or a cheap tripod</td><td>DIY / buy</td><td><span class="pill check">Need</span></td></tr>
+<tr><td>Webcam</td><td>Logitech</td><td>Store</td><td><span class="pill out">Out of stock</span></td></tr>
+<tr><td>Pod housing</td><td>3D-printed dock</td><td>Print form</td><td><span class="pill store">1 print</span></td></tr>
+<tr><td>Mini screen on the pod</td><td>1.3" OLED</td><td>You bought it</td><td><span class="pill opt">Stretch</span></td></tr>
+<tr><td colspan="4" style="color:var(--muted-foreground)">Not needed: RFID reader, ultrasonic sensor, ESP32, MPU6050, 7-segment / dot-matrix displays, 74HC595. Leave them out so the scope stays tight.</td></tr>
+</table>
+</section>
+
+<section>
+<h3>How the probe pod is wired</h3>
+<p class="sub">Everything plugs into the kit breadboard next to the Uno. No soldering.</p>
+<svg id="pod" viewBox="0 0 700 300" width="100%" role="img" aria-label="Pod wiring"></svg>
+</section>
+
+<section>
+<h3>Demo labs you can build from the kit</h3>
+<p class="sub">Two core labs make a full demo. Each has faults you can set up in seconds, or that a judge can introduce.</p>
+<div class="labs">
+<div class="lab"><div class="t">Lab 1 · LED + resistor <span class="pill have">Core</span></div>
+<div class="k">Parts</div>Red LED, 220 Ω, 2 wires
+<div class="k">Faults to set up</div><ul>
+<li><b>LED backwards</b>: probe reads 5.0 V instead of ~2 V, so no current is flowing</li>
+<li><b>10 kΩ instead of 220 Ω</b>: the LED is very dim, and its voltage is lower than expected</li>
+<li><b>LED leg one row off</b>: the row reads 5 V and the LED is dark</li>
+<li><b>Missing ground wire</b>: every point reads 5 V</li></ul></div>
+<div class="lab"><div class="t">Lab 2 · Light sensor <span class="pill have">Core</span></div>
+<div class="k">Parts</div>Photoresistor, 10 kΩ, 3 wires
+<div class="k">Faults to set up</div><ul>
+<li><b>220 Ω instead of 10 kΩ</b>: the output barely moves when the light changes</li>
+<li><b>Output wire on the wrong row</b>: it reads a fixed 0 or 5 V</li>
+<li><b>Live moment</b>: the student covers the sensor and the on-screen gauge moves. Bench asks, "why did it go up?"</li></ul></div>
+<div class="lab"><div class="t">Lab 3 · IR receiver <span class="pill check">Stretch</span></div>
+<div class="k">Parts</div>IR receiver, remote, LED + 220 Ω
+<div class="k">Why it matters</div>It's the closest match to the ENGR 10 IR board Aadi TAs. The output sits near 5 V and flickers low when the remote is pressed, and the pod can see that flicker.
+<div class="k">Faults to set up</div><ul><li><b>Output pin not connected</b>, or a <b>missing 5 V wire</b>. Never stage reversed power, because it can kill the sensor.</li></ul></div>
+<div class="lab"><div class="t">Lab 4 · Transistor switch <span class="pill check">Stretch</span></div>
+<div class="k">Parts</div>NPN transistor (store), button, 1 kΩ, LED + 220 Ω
+<div class="k">Faults to set up</div><ul>
+<li><b>Transistor turned around</b>: the base reads ~0.7 V but the LED stays off</li>
+<li><b>Button wired to the wrong row</b>: the base never rises when the button is pressed</li></ul></div>
+</div>
+</section>
+
+<section>
+<h3>The one 3D print: a "pod dock"</h3>
+<p class="sub">A flat tray that holds the Uno and the pod breadboard together, with low walls and raised Y / B / G / W labels where the probe wires come out. It's polish, not something the demo depends on. If the print fails, use cardboard and tape.</p>
+<div class="print">
+<svg id="dock" viewBox="0 0 360 230" width="100%" role="img" aria-label="Pod dock top view"></svg>
+<table class="form">
+<tr><th colspan="2">What to put on the print form</th></tr>
+<tr><td>Printer</td><td>Bambu P1S (faster, most reliable)</td></tr>
+<tr><td>STL file</td><td>I'll generate it once you send the measurements below</td></tr>
+<tr><td>Settings</td><td class="mono">PLA · 0.2 mm layers · 15% infill · 2 walls · no supports</td></tr>
+<tr><td>Estimated time</td><td>Aim for <b>≤ 2.5 h</b>. Check it in free Bambu Studio before submitting.</td></tr>
+<tr><td>Color</td><td>1st Black, 2nd White. Skip Clear and the specialty colors.</td></tr>
+<tr><td>When</td><td>Submit Saturday morning, early in the queue</td></tr>
+<tr><td>Measure first</td><td>Pod breadboard length × width × height (with a ruler), and confirm the Uno is a standard R3 (68.6 × 53.3 mm)</td></tr>
+</table>
+</div>
+</section>
+</div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+function mk(svg){return function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;svg.appendChild(e);return e}}
+const fg='var(--foreground)',mu='var(--muted-foreground)',bd='var(--border)',card='var(--card)';
+function badge(el,n,x,y){el('circle',{cx:x,cy:y,r:10,fill:'var(--accent)'});el('text',{x,y:y+4,'font-size':11,'font-weight':700,'text-anchor':'middle',fill:'var(--accent-foreground)'},n)}
+
+// ---------- setup diagram ----------
+{const el=mk(document.getElementById('bench'));
+el('line',{x1:0,y1:330,x2:700,y2:330,stroke:bd,'stroke-width':2});
+// phone stand (books + board)
+el('rect',{x:228,y:120,width:26,height:210,fill:'var(--muted)',stroke:mu});
+el('rect',{x:476,y:120,width:26,height:210,fill:'var(--muted)',stroke:mu});
+for(let i=0;i<5;i++){el('line',{x1:228,y1:130+i*40,x2:254,y2:130+i*40,stroke:mu,'stroke-width':.6});el('line',{x1:476,y1:130+i*40,x2:502,y2:130+i*40,stroke:mu,'stroke-width':.6});}
+el('rect',{x:220,y:110,width:290,height:10,rx:2,fill:'var(--muted)',stroke:mu});
+el('text',{x:241,y:325,'font-size':8,fill:mu,'text-anchor':'middle'},'books');
+el('rect',{x:325,y:94,width:80,height:16,rx:4,fill:card,stroke:fg,'stroke-width':1.5});
+el('circle',{cx:365,cy:117,r:3,fill:fg});
+el('path',{d:'M365 121 L262 250 M365 121 L468 250',stroke:mu,'stroke-dasharray':'4 4',fill:'none'});
+el('text',{x:365,y:88,'font-size':9,fill:mu,'text-anchor':'middle'},'phone lies face-down, camera over a hole in the board');
+// lab breadboard
+const bx=262,by=250,bw=206,bh=70;
+el('rect',{x:bx,y:by,width:bw,height:bh,rx:5,fill:card,stroke:fg,'stroke-width':1.2});
+for(let n=0;n<20;n++){for(let r=0;r<5;r++)el('circle',{cx:bx+12+n*10,cy:by+20+r*8,r:1.3,fill:mu});
+ el('circle',{cx:bx+12+n*10,cy:by+7,r:1.2,fill:'var(--r)',opacity:.7});el('circle',{cx:bx+12+n*10,cy:by+12,r:1.2,fill:'var(--b)',opacity:.7});}
+const cx=n=>bx+12+(n-1)*10;
+el('rect',{x:cx(8)-5,y:by+15,width:10,height:40,rx:3,fill:'var(--y)',opacity:.35});
+el('rect',{x:cx(4)+2,y:by+26,width:22,height:7,rx:3,fill:'#c8a26b',stroke:fg,'stroke-width':.7});
+el('circle',{cx:cx(10),cy:by+30,r:6,fill:'var(--r)',opacity:.55,stroke:fg,'stroke-width':.7});
+// pod dock
+el('rect',{x:14,y:236,width:196,height:90,rx:8,fill:'var(--muted)',stroke:fg,'stroke-width':1.3});
+el('rect',{x:24,y:246,width:78,height:60,rx:3,fill:'#0f766e',stroke:fg,'stroke-width':.8});
+el('text',{x:63,y:280,'font-size':9,'text-anchor':'middle',fill:'#fff','font-weight':600},'Arduino Uno');
+el('rect',{x:110,y:246,width:90,height:60,rx:3,fill:card,stroke:fg,'stroke-width':.8});
+for(let n=0;n<8;n++)for(let r=0;r<4;r++)el('circle',{cx:118+n*10,cy:258+r*10,r:1.1,fill:mu});
+el('circle',{cx:130,cy:290,r:8,fill:'var(--destructive)',stroke:fg});
+el('circle',{cx:180,cy:256,r:5,fill:'var(--g)',stroke:fg,'stroke-width':.8});
+el('text',{x:112,y:320,'font-size':9,'text-anchor':'middle',fill:fg,'font-weight':600},'Probe pod (in printed dock)');
+el('text',{x:142,y:293,'font-size':8,fill:mu},'talk');
+el('text',{x:172,y:259,'font-size':8,'text-anchor':'end',fill:mu},'status');
+// probe wires
+el('path',{d:`M200 262 C235 262, 245 ${by+28}, ${cx(8)} ${by+28}`,stroke:'var(--y)','stroke-width':3,fill:'none'});
+el('circle',{cx:cx(8),cy:by+28,r:2.8,fill:'var(--y)',stroke:fg,'stroke-width':.7});
+['var(--b)','var(--g)','var(--w)'].forEach((c,i)=>el('path',{d:`M200 ${272+i*8} C215 ${276+i*8}, 222 ${300+i*4}, 214 ${312+i*4}`,stroke:c,'stroke-width':3,fill:'none'}));
+// power wires
+el('path',{d:`M190 246 C200 200, ${bx+10} 215, ${bx+10} ${by+7}`,stroke:'var(--r)','stroke-width':2.5,fill:'none'});
+el('path',{d:`M180 246 C190 190, ${bx+20} 205, ${bx+20} ${by+12}`,stroke:mu,'stroke-width':4.5,fill:'none'});el('path',{d:`M180 246 C190 190, ${bx+20} 205, ${bx+20} ${by+12}`,stroke:'#111','stroke-width':2.5,fill:'none'});
+// usb
+el('path',{d:'M24 300 C0 300, 0 340, 40 340 L600 340 C620 340, 622 300, 620 214',stroke:mu,'stroke-width':2.5,fill:'none'});
+el('text',{x:330,y:348,'font-size':8,fill:mu,'text-anchor':'middle'},'USB cable: power to the pod + readings to the laptop');
+// laptop
+el('rect',{x:528,y:70,width:166,height:126,rx:6,fill:card,stroke:fg,'stroke-width':1.5});
+el('path',{d:'M518 214 L700 214 L692 196 L528 196 Z',fill:card,stroke:fg,'stroke-width':1.5});
+el('rect',{x:536,y:78,width:92,height:70,rx:3,fill:'var(--muted)'});
+el('rect',{x:546,y:90,width:72,height:42,rx:2,fill:card,stroke:mu});
+el('rect',{x:578,y:94,width:6,height:20,fill:'var(--y)',opacity:.7});
+el('rect',{x:632,y:78,width:54,height:70,rx:3,fill:'var(--muted)'});
+for(let i=0;i<5;i++)el('rect',{x:638,y:86+i*10,width:i==2?42:32,height:4,rx:2,fill:i==2?'var(--accent)':mu,opacity:i==2?1:.5});
+el('rect',{x:536,y:152,width:150,height:38,rx:3,fill:'var(--muted)'});
+el('text',{x:542,y:166,'font-size':8.5,fill:fg,'font-family':'var(--font-mono)'},'Yellow 5.01 V  (expect ≈2)');
+el('rect',{x:542,y:172,width:110,height:4,rx:2,fill:'var(--destructive)'});
+el('text',{x:542,y:186,'font-size':7.5,fill:mu},'🔊 "…so no current is flowing."');
+badge(el,1,418,98);badge(el,2,482,262);badge(el,3,22,232);badge(el,4,cx(8)+16,by+58);badge(el,5,236,212);badge(el,6,694,64);
+}
+
+// ---------- pod wiring ----------
+{const el=mk(document.getElementById('pod'));
+el('rect',{x:20,y:20,width:150,height:260,rx:8,fill:'#0f766e',stroke:fg});
+el('text',{x:95,y:42,'font-size':12,'text-anchor':'middle',fill:'#fff','font-weight':700},'Arduino Uno');
+const pins=[['A0',70],['A1',95],['A2',120],['A3',145],['D2',185],['D9–11',215],['5V',245],['GND',268]];
+pins.forEach(([p,y])=>{el('rect',{x:150,y:y-8,width:20,height:16,rx:2,fill:'#111827'});el('text',{x:144,y:y+4,'font-size':11,'text-anchor':'end',fill:'#fff','font-family':'var(--font-mono)'},p)});
+const probes=[['Yellow','var(--y)'],['Blue','var(--b)'],['Green','var(--g)'],['White','var(--w)']];
+probes.forEach(([nm,c],i)=>{const y=70+i*25;
+ el('line',{x1:170,y1:y,x2:260,y2:y,stroke:mu,'stroke-width':1.5});
+ el('path',{d:`M260 ${y} l5 -5 l6 10 l6 -10 l6 10 l6 -10 l6 10 l5 -5`,stroke:fg,'stroke-width':1.3,fill:'none'});
+ el('line',{x1:300,y1:y,x2:470,y2:y,stroke:c,'stroke-width':3.5});
+ el('circle',{cx:474,cy:y,r:4,fill:c,stroke:fg,'stroke-width':.8});
+ el('text',{x:486,y:y+4,'font-size':12,fill:fg},`${nm} probe`);});
+el('text',{x:280,y:60,'font-size':10,fill:mu,'text-anchor':'middle'},'10 kΩ safety resistor');el('text',{x:486,y:52,'font-size':10,fill:mu},'→ plugged into whatever row Bench asks');
+// button
+el('line',{x1:170,y1:185,x2:260,y2:185,stroke:mu,'stroke-width':1.5});
+el('circle',{cx:275,cy:185,r:9,fill:'var(--destructive)',stroke:fg});
+el('line',{x1:284,y1:185,x2:320,y2:185,stroke:mu,'stroke-width':1.5});
+el('text',{x:330,y:189,'font-size':12,fill:fg},'Talk button → GND (uses the Uno\'s built-in pull-up, no resistor)');
+// rgb
+el('line',{x1:170,y1:215,x2:260,y2:215,stroke:mu,'stroke-width':1.5});
+el('path',{d:'M260 215 l4 -4 l5 8 l5 -8 l5 8 l5 -8 l4 4',stroke:fg,'stroke-width':1.2,fill:'none'});
+el('circle',{cx:305,cy:215,r:7,fill:'var(--g)',stroke:fg});
+el('text',{x:320,y:219,'font-size':12,fill:fg},'Status LED (3 × 220 Ω): green = listening, blue = thinking');
+// power
+el('line',{x1:170,y1:245,x2:470,y2:245,stroke:'var(--r)','stroke-width':3.5});
+el('line',{x1:170,y1:268,x2:470,y2:268,stroke:mu,'stroke-width':5.5});el('line',{x1:170,y1:268,x2:470,y2:268,stroke:'#111','stroke-width':3.5});
+el('text',{x:486,y:249,'font-size':12,fill:fg},'Red → lab board + rail (5 V)');
+el('text',{x:486,y:272,'font-size':12,fill:fg},'Black → lab board − rail (ground)');
+}
+
+// ---------- dock top view ----------
+{const el=mk(document.getElementById('dock'));
+el('rect',{x:10,y:10,width:340,height:200,rx:10,fill:'var(--muted)',stroke:fg,'stroke-width':1.5});
+el('rect',{x:24,y:24,width:130,height:100,rx:4,fill:'#0f766e',opacity:.85,stroke:fg});
+el('text',{x:89,y:72,'font-size':11,'text-anchor':'middle',fill:'#fff','font-weight':600},'Uno');
+el('text',{x:89,y:88,'font-size':9,'text-anchor':'middle',fill:'#fff'},'sits on 4 pegs');
+[[34,32],[36,116],[144,44],[144,98]].forEach(([x,y])=>el('circle',{cx:x,cy:y,r:3.5,fill:fg}));
+el('rect',{x:10,y:40,width:14,height:26,fill:card,stroke:fg});
+el('text',{x:6,y:84,'font-size':8,fill:mu,transform:'rotate(-90 6 84)'},'USB gap');
+el('rect',{x:24,y:136,width:312,height:62,rx:3,fill:card,stroke:fg});
+el('text',{x:180,y:171,'font-size':11,'text-anchor':'middle',fill:fg,'font-weight':600},'pod breadboard pocket');
+['Y','B','G','W'].forEach((t,i)=>{el('rect',{x:200+i*36,y:30,width:28,height:22,rx:4,fill:card,stroke:fg});el('text',{x:214+i*36,y:46,'font-size':12,'text-anchor':'middle',fill:fg,'font-weight':700},t)});
+el('text',{x:268,y:70,'font-size':9,'text-anchor':'middle',fill:mu},'raised labels where the');
+el('text',{x:268,y:81,'font-size':9,'text-anchor':'middle',fill:mu},'probe wires come out');
+el('circle',{cx:230,cy:108,r:12,fill:'none',stroke:fg,'stroke-dasharray':'3 3'});
+el('text',{x:250,y:112,'font-size':9,fill:mu},'button access hole');
+el('text',{x:180,y:224,'font-size':9,'text-anchor':'middle',fill:mu},'≈ 180 × 130 mm plate, 15 mm walls (exact size after you measure)');
+}
+</script></body></html>
