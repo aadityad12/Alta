@@ -193,6 +193,7 @@ class Agent:
                 # Timeout, API or network error. Roll the history back to before this turn so it never
                 # holds a tool call without its result; the student is asked to say it again.
                 log.warning("agent turn failed: %r", e)
+                await self.bench.session.health.down("ai", type(e).__name__)
                 self._rollback(msgs, start, kept)
                 await self._end_filler(filler)
                 return await self._fail(gen, GLITCH_LINE, error=True, detail=type(e).__name__)
@@ -351,6 +352,7 @@ class Agent:
             resp = await stream.get_final_message()
         self.usage.append(resp.usage)
         self._last_request = time.monotonic()
+        await self.bench.session.health.ok("ai")
         u = resp.usage
         self.bench.session.record(
             "claude", ms=round((time.monotonic() - t0) * 1000), ttft_ms=round((first - t0) * 1000) if first else None,
@@ -381,6 +383,7 @@ class Agent:
         resp = await self.client.beta.messages.create(
             **self._settings(), max_tokens=0, messages=[{"role": "user", "content": "warmup"}])
         self._last_request = time.monotonic()
+        await self.bench.session.health.ok("ai")
         u = resp.usage
         log.info("prompt cache warmed in %.0f ms (write %s, read %s)", (time.monotonic() - t0) * 1000,
                  u.cache_creation_input_tokens, u.cache_read_input_tokens)
@@ -396,6 +399,7 @@ class Agent:
                     self._warm_key = key
                 except Exception as e:
                     log.warning("cache pre-warm failed: %r", e)
+                    await self.bench.session.health.down("ai", f"pre-warm: {type(e).__name__}")
                     await asyncio.sleep(30)
             await asyncio.sleep(2)
 

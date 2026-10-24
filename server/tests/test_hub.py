@@ -71,7 +71,7 @@ def test_probes_are_throttled_to_10hz(demo_client):
 
 def test_unknown_and_malformed_messages_get_polite_errors(client):
     with client.websocket_connect("/ws") as ws:
-        recv_until(ws, "manual")
+        recv_until(ws, "health")  # the last message on connect
         ws.send_json({"type": "dance"})
         assert ws.receive_json() == {"type": "error", "message": "unknown message type: 'dance'"}
         ws.send_json({"type": "ptt"})
@@ -146,3 +146,61 @@ def test_overlay_item_uses_contract_field_names():
     item = OverlayItem(id="a1", kind="arrow", from_="6c", to="10c", style="attention")
     assert item.wire() == {"id": "a1", "kind": "arrow", "from": "6c", "to": "10c", "style": "attention"}
     assert OverlayItem.model_validate({"id": "a1", "kind": "arrow", "from": "6c", "to": "10c"}).from_ == "6c"
+
+
+# ---------- health (#31) ----------
+
+def test_connect_sends_health_last(client):
+    with client.websocket_connect("/ws") as ws:
+        health, before = recv_until(ws, "health")
+        assert [m["type"] for m in before] == ["lab", "state", "manual"]
+        # pod_port="off", no mic or speaker in tests; ai depends on whether .env has a key. No banners either way.
+        assert (health["pod"], health["voice"], health["fix"]) == ("off", "off", {})
+        assert health["ai"] in ("ok", "off")
+
+
+def test_pod_health_follows_the_usb_link_and_survives_talking():
+    from bench import bus as ev
+    from bench.bus import Event
+    from bench.hub import Bench
+    from bench.labs import load_labs
+
+    bench = Bench(load_labs(DEMO_LABS_DIR))
+    sent = []
+
+    async def broadcast(m):
+        sent.append(m.wire())
+
+    bench.session.broadcast = broadcast
+    bench.session.health.waiting("pod")  # as at startup with a pod configured
+
+    async def go():
+        await bench.handle(Event(ev.POD_STATUS, True))
+        await bench.handle(Event(ev.POD_STATUS, False))
+        await bench.handle(Event(ev.PTT, True))  # talking clears the error state...
+        await bench.handle(Event(ev.PTT, False))
+        await bench.handle(Event(ev.POD_STATUS, False))  # (a repeat is not news)
+        await bench.handle(Event(ev.POD_STATUS, True))
+
+    import asyncio
+    asyncio.run(go())
+    health = [m for m in sent if m["type"] == "health"]
+    assert [m["pod"] for m in health] == ["ok", "down", "ok"]  # ...but not the pod banner
+    assert health[1]["fix"] == {"pod": "Plug the pod's USB cable back in"}
+    assert health[2]["fix"] == {}
+
+
+def test_health_ignores_parts_that_are_off():
+    import asyncio
+
+    from bench.health import Health
+
+    sent = []
+
+    async def broadcast(m):
+        sent.append(m.wire())
+
+    h = Health(broadcast)
+    h.off("voice")
+    asyncio.run(h.down("voice", "no key"))
+    assert sent == [] and h.status["voice"] == "off"

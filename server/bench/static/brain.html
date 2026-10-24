@@ -15,6 +15,8 @@
   header { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
   header h1 { font-size: 16px; margin: 0; font-weight: 650; }
   header .sub { color: var(--dim); font-size: 12px; }
+  #health { display: none; background: #8f2d2d; color: #fff; padding: 8px 16px; font-weight: 600; }
+  #health div + div { margin-top: 4px; }
   .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #2a2f3a; }
   .badge.idle { background: #2a2f3a; } .badge.listening { background: #1f6f3f; } .badge.transcribing,
   .badge.thinking { background: #2d4f8f; } .badge.speaking { background: #7a4fb0; } .badge.error { background: #8f2d2d; }
@@ -67,6 +69,7 @@
   <label class="sub">Lab <select id="lab"></select></label>
   <button id="reset" title="New student: clears the conversation">New student</button>
 </header>
+<div id="health" role="alert"></div>
 
 <main>
   <section>
@@ -343,6 +346,10 @@ function connect() {
       case "probes": probes = m; drawGauges(); break;
       case "request_frame": sendFrame(m.id); break;
       case "error": addMsg("system", m.message, true); break;
+      case "health": {  // what the student screen's banners show (#31)
+        const lines = Object.entries(m.fix || {}).map(([part, fix]) => `<div>${esc(part)}: ${esc(fix)}</div>`);
+        $("health").innerHTML = lines.join(""); $("health").style.display = lines.length ? "block" : "none"; break;
+      }
     }
   };
 }

@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from .health import Health
 from .protocol import ExpectOut, State, StateOut, TranscriptOut, _Msg
 
 log = logging.getLogger(__name__)
@@ -64,6 +65,11 @@ class Session:
     state: State = State.idle
     detail: str | None = None
     generation: int = 0  # bumped on every reset, so long-running tasks can notice
+    health: Health = field(init=False)  # what's broken right now (#31); reset() leaves it alone
+
+    def __post_init__(self) -> None:
+        # lambdas: tests and the hub swap broadcast / record after the session is made
+        self.health = Health(lambda m: self.broadcast(m), record=lambda kind, **f: self.record(kind, **f))
 
     async def set_state(self, new: State, detail: str | None = None) -> bool:
         """Move the state machine. Broadcasts `state` and sets the pod LED. Returns False if refused."""

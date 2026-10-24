@@ -74,6 +74,7 @@ def create_app(
             await sp.connect()  # warm the websocket so the first reply doesn't pay for it
         except Exception as e:
             log.warning("tts connect failed (%r); will retry on the first reply", e)
+            await bench.session.health.down("voice", f"tts connect: {type(e).__name__}")
         log.info("voice: %s · %s", sp.voice_id, sp.model)
         agent.speak, agent.speak_stream = sp.say, sp.speak
         return sp
@@ -101,6 +102,15 @@ def create_app(
             pod.start(asyncio.get_running_loop())
         if board:
             tasks.append(asyncio.create_task(board.run()))
+        health = bench.session.health
+        if pod:
+            health.waiting("pod")  # down until the pod says hello
+        elif not mock_board:
+            health.off("pod")
+        if not agent or not os.environ.get("ANTHROPIC_API_KEY"):
+            health.off("ai")
+        if not agent or not os.environ.get("CARTESIA_API_KEY") or not (use_speaker or use_mic):
+            health.off("voice")
         if use_speaker:
             bench.speaker = await open_speaker()
         if use_mic:

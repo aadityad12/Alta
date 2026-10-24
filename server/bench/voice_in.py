@@ -195,6 +195,10 @@ class VoiceIn:
         self.timings.append(took)
         log.info("stt: %.1f s clip, transcript %.2f s after release: %r", len(pcm) / SAMPLE_RATE, took, text)
         s.record("stt", ms=round(took * 1000), clip_s=round(len(pcm) / SAMPLE_RATE, 2), text=text, failed=failed)
+        if failed:
+            await s.health.down("voice", f"stt: {failed}")
+        else:
+            await s.health.ok("voice")
         if s.generation != gen or s.state is not State.transcribing:
             return  # reset, new lab, or the student pressed again: drop this clip
         if not text:

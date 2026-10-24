@@ -283,6 +283,7 @@ class Speaker:
                             s.record("first_sentence")
                     except Exception as e:
                         log.warning("tts push failed: %r (captions only from here)", e)
+                        await s.health.down("voice", f"tts: {type(e).__name__}")
                         ctx = None
             if said:
                 await s.say("bench", " ".join(said))
@@ -298,6 +299,7 @@ class Speaker:
                     pass
                 except Exception as e:
                     log.warning("tts receive failed: %r", e)
+                    await s.health.down("voice", f"tts: {type(e).__name__}")
                 self._recv = None
             self._ctx = None
             while self.player.pending() and self._muted is not owner:
@@ -322,6 +324,7 @@ class Speaker:
         except Exception as e:
             log.warning("tts unavailable: %r (captions only)", e)
             self._conn = None
+            await self.session.health.down("voice", f"tts: {type(e).__name__}")
             return None
 
     async def _enter_speaking(self, owner: object) -> bool:
@@ -340,6 +343,7 @@ class Speaker:
                     continue
                 if first:
                     first = False
+                    await self.session.health.ok("voice")
                     if not await self._enter_speaking(owner):
                         self.player.clear()
                         continue
@@ -351,6 +355,7 @@ class Speaker:
                 self.player.write(np.frombuffer(audio, dtype="<i2"))
             elif ev.type == "error":
                 log.warning("tts error: %s", getattr(ev, "error", ev))
+                await self.session.health.down("voice", "tts error")
                 return
 
 

@@ -81,6 +81,13 @@ Unknown command → `{"err":"unknown_cmd"}`.
 | `state` | `value`: idle, listening, transcribing, thinking, speaking, error; optional `detail` | drives the status indicator |
 | `request_frame` | `id` | the agent wants to look at the board |
 | `error` | `message` | |
+| `health` | `pod`, `ai`, `voice`: each `"ok"`, `"down"` or `"off"` (not set up); `fix`: `{part: one-line fix}` for each part that's down | on connect and on every change. Drives the error banners (#31). Separate from `state`: talking still works while a banner is up |
+
+**`health` example** (Claude unreachable):
+```json
+{ "type": "health", "pod": "ok", "ai": "down", "voice": "ok", "fix": { "ai": "ALTA can't reach its brain. Check internet / hotspot" } }
+```
+The screen handles camera-missing and server-down itself (no video track / the `/ws` socket closed).
 
 **OverlayItem**
 ```json

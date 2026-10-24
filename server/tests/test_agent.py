@@ -218,6 +218,16 @@ def test_api_error_says_fallback_line_and_rolls_back():
     assert agent.messages == []  # no dangling tool call left behind
 
 
+def test_api_error_puts_ai_down_until_the_next_answer():
+    agent, _, sent = make(RuntimeError("connection reset"), msg("Row 10 reads about 5 volts."))
+    run(agent.turn("hello"))
+    run(agent.turn("hello again"))
+    assert [(m["ai"], m["fix"]) for m in of(sent, "health")] == [
+        ("down", {"ai": "ALTA can't reach its brain. Check internet / hotspot"}),
+        ("ok", {}),
+    ]
+
+
 def test_turn_timeout_says_fallback_line(monkeypatch):
     monkeypatch.setattr(agent_mod, "TURN_TIMEOUT_S", 0.2)
     agent, _, _ = make(lambda kw: asyncio.sleep(5))
