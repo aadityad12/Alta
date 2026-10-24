@@ -1,0 +1,66 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bench · probe pod wiring</title><style>
+:root{--background:#0d1117;--foreground:#e6edf3;--muted-foreground:#8b949e;--card:#161b22;--border:#30363d;--accent:#2f81f7;--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;--radius:8px}
+html{background:var(--background)}body{margin:0 auto;padding:24px;max-width:980px;font-family:var(--font-sans);color:var(--foreground)}
+h2{font-size:17px;margin:0 0 4px}.sub{color:var(--muted-foreground);font-size:13px;line-height:1.45;margin:0 0 12px}
+.board{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px;font-size:12.5px;line-height:1.45}
+.k div{border-left:3px solid var(--accent);padding:2px 0 2px 8px}
+</style></head><body>
+<h2>Probe pod wiring (kit breadboard next to the Uno)</h2>
+<p class="sub">Exact holes for <code>firmware/WIRING.md</code> (#5). Tags like <b>A0</b> mean "jumper from this hole to that Uno pin". Probe wires leave from the j side, toward the dock's Y/B/G/W labels (#37).</p>
+<div class="board"><svg id="pod" viewBox="0 0 640 420" width="100%" role="img" aria-label="Probe pod breadboard wiring"></svg></div>
+<div class="k">
+<div><b>Probes</b>: Uno pin → row a · 10 kΩ across the gap · probe wire from row j</div>
+<div><b>Button</b>: diagonal legs 20f (→ D2) and 22e (→ GND), so it works in either rotation</div>
+<div><b>RGB LED</b>: long leg 27b → GND (common-cathode) or 5 V (common-anode); R/G/B → D9/D10/D11 via 220 Ω</div>
+</div>
+<script>
+const NS='http://www.w3.org/2000/svg',svg=document.getElementById('pod');
+const el=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;svg.appendChild(e);return e};
+const P=16,X0=56,ROWS=32,cols='abcdefghij';
+const cy=c=>{const i=cols.indexOf(c);return 98+i*P+(i>=5?26:0)};
+const RAIL={'a+':50,'a-':68};
+const rx=r=>X0+(r-1)*P;
+const at=h=>{if(h.startsWith('rail:'))return null;const m=h.match(/(\d+)([a-j])/);return[rx(+m[1]),cy(m[2])]};
+// board
+el('rect',{x:X0-22,y:34,width:ROWS*P+30,height:cy('j')+26-34,rx:8,fill:'#f4f1ea',stroke:'#d6d0c4'});
+el('rect',{x:X0-22,y:cy('e')+7,width:ROWS*P+30,height:12,fill:'#e6e0d4'});
+const defs=el('defs',{});const pat=document.createElementNS(NS,'pattern');
+Object.entries({id:'hole',x:X0-8,y:0,width:P,height:P,patternUnits:'userSpaceOnUse'}).forEach(([k,v])=>pat.setAttribute(k,v));
+const hr=document.createElementNS(NS,'rect');Object.entries({x:5.5,y:5.5,width:5,height:5,fill:'#9a9384'}).forEach(([k,v])=>hr.setAttribute(k,v));pat.appendChild(hr);defs.appendChild(pat);
+for(const [n,y] of Object.entries(RAIL)){el('line',{x1:X0-12,x2:rx(ROWS)+8,y1:y-8,y2:y-8,stroke:n.endsWith('+')?'#d33':'#246','stroke-width':1.5,opacity:.7});
+ el('rect',{x:X0-8,y:y-8,width:ROWS*P,height:P,fill:'url(#hole)'});el('text',{x:X0-26,y:y+4,'font-size':9,'text-anchor':'end',fill:'#8b949e'},n==='a+'?'+ 5V':'− GND')}
+for(const c of cols){el('text',{x:X0-14,y:cy(c)+3,'font-size':9,'text-anchor':'middle',fill:'#777'},c);el('rect',{x:X0-8,y:cy(c)-8,width:ROWS*P,height:P,fill:'url(#hole)'})}
+for(let r=1;r<=ROWS;r++)if(r===1||r%5===0||[3,6,9,12,20,22,26,29].includes(r))el('text',{x:rx(r),y:cy('a')-10,'font-size':8.5,'text-anchor':'middle',fill:'#777'},r);
+const tag=(x,y,t,c='#0f766e',below=false)=>{const w=t.length*6.5+8,ty=below?y+10:y-22;el('line',{x1:x,y1:y,x2:x,y2:below?ty:ty+12,stroke:c,'stroke-width':2});
+ el('rect',{x:x-w/2,y:ty,width:w,height:12,rx:3,fill:c});el('text',{x,y:ty+9,'font-size':8.5,'text-anchor':'middle',fill:'#fff','font-weight':700,'font-family':'var(--font-mono)'},t)};
+const res=(r,c1,c2,bands)=>{const[a,b]=[at(r+c1),at(r+c2)];el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:'#888','stroke-width':1.6});
+ const my=(a[1]+b[1])/2;el('rect',{x:a[0]-5,y:my-13,width:10,height:26,rx:4,fill:'#e9c98b',stroke:'#a8874d'});bands.forEach((bc,i)=>el('rect',{x:a[0]-5,y:my-8+i*6,width:10,height:3,fill:bc}))};
+const railWire=(h,rail,color)=>{const[x,y]=at(h);el('path',{d:`M${x},${y} L${x},${RAIL[rail]}`,stroke:color,'stroke-width':3,'stroke-linecap':'round'})};
+// probes
+const PR=[['Y',3,'A0','#e3b505'],['B',6,'A1','#3b82f6'],['G',9,'A2','#22c55e'],['W',12,'A3','#cbd5e1']];
+for(const[p,r,pin,c]of PR){const a=at(r+'a');tag(a[0],a[1],pin);res(r,'e','f',['#7a4a1c','#111','#f08c00']);
+ const j=at(r+'j');el('path',{d:`M${j[0]},${j[1]} C${j[0]},${j[1]+50} ${j[0]+10},${j[1]+60} ${j[0]+18},${j[1]+80}`,fill:'none',stroke:c,'stroke-width':4,'stroke-linecap':'round'});
+ el('text',{x:j[0]+20,y:j[1]+94,'font-size':11,'text-anchor':'middle',fill:c,'font-weight':700},p+' probe')}
+el('text',{x:rx(16),y:cy('e')+16,'font-size':9,'text-anchor':'middle',fill:'#555'},'10 kΩ safety resistors');
+// button
+el('rect',{x:rx(20)-6,y:cy('e')-6,width:2*P+12,height:cy('f')-cy('e')+12,rx:4,fill:'#333',opacity:.85});
+el('circle',{cx:rx(21),cy:(cy('e')+cy('f'))/2,r:9,fill:'#e03131',stroke:'#111'});
+[['20e'],['22e'],['20f'],['22f']].forEach(([h])=>{const[x,y]=at(h);el('circle',{cx:x,cy:y,r:2.5,fill:'#ddd'})});
+{const a=at('20j');tag(a[0],a[1],'D2','#0f766e',true);railWire('22a','a-','#222');}
+el('text',{x:rx(21),y:cy('j')+44,'font-size':9,'text-anchor':'middle',fill:'#555'},'talk button');
+// RGB LED
+{const leg=['26b','27b','28b','29b'],cl=['#e03131','#999','#22c55e','#3b82f6'];
+ el('circle',{cx:rx(27.5),cy:cy('b'),r:14,fill:'#f1f3f5',stroke:'#868e96',opacity:.85});
+ leg.forEach((h,i)=>{const[x,y]=at(h);el('circle',{cx:x,cy:y,r:3,fill:cl[i],stroke:'#333','stroke-width':.6})});
+ el('text',{x:rx(27.5),y:cy('d')+4,'font-size':9,'text-anchor':'middle',fill:'#555'},'RGB · long leg 27b');
+ [26,28,29].forEach(r=>res(r,'e','f',['#d22','#d22','#7a4a1c']));
+ [['26j','D9'],['28j','D10'],['29j','D11']].forEach(([h,p],i)=>{const[x,y]=at(h);tag(x+(i-1)*9,y,p,'#0f766e',true)});
+ railWire('27a','a-','#222')}
+// uno power + lab power
+{const x=rx(31);el('path',{d:`M${x},${RAIL['a+']} L${x},26`,stroke:'#e03131','stroke-width':3});tag(x,26,'Uno 5V','#e03131');
+ const g=rx(2);el('path',{d:`M${g},${RAIL['a-']} L${g},26`,stroke:'#222','stroke-width':3});tag(g,26,'Uno GND','#222');
+ const x2=rx(1);el('path',{d:`M${x2},${RAIL['a-']} l-0,0`,stroke:'#222','stroke-width':3});}
+el('text',{x:X0-20,y:410,'font-size':9.5,fill:'#8b949e'},'Lab board power: pod + rail → lab + rail (red), pod − rail → lab − rail (black)');
+</script>
+</body></html>
