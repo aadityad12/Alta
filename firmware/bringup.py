@@ -71,7 +71,12 @@ class Pod:
         return out
 
     def flush(self) -> None:
+        # reset_input_buffer only clears the Mac's side; the Uno's USB chip still holds lines
+        # from while we waited at a prompt, so read and drop them too.
         self.ser.reset_input_buffer()
+        end = time.monotonic() + 0.6
+        while time.monotonic() < end:
+            self.ser.read(self.ser.in_waiting or 1)
         self.buf = b""
         self.skip_partial = True
 
