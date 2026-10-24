@@ -159,3 +159,4 @@ def test_no_pod_is_not_an_error(tmp_path):
         ws.send_json({"type": "ptt", "down": True})
         inbox.state("listening")  # on-screen talk button works without a pod
         assert not c.app.state.pod.connected
+

@@ -114,6 +114,7 @@ class PodBridge:
         ser = self._ser
         opened = last_rx = time.monotonic()
         got_data = pinged = False
+        first = True  # we probably opened mid-line; that first fragment isn't worth a warning
         buf = b""
         while not self._stop.is_set():
             chunk = ser.read(ser.in_waiting or 1)
@@ -122,6 +123,10 @@ class PodBridge:
                 last_rx = now
                 buf += chunk
                 *lines, buf = buf.split(b"\n")
+                if first and lines:
+                    first = False
+                    if not lines[0].lstrip().startswith(b"{"):
+                        lines = lines[1:]
                 for raw in lines:
                     msg = self._parse(raw)
                     if msg is None:
