@@ -82,7 +82,7 @@ class Bench:
             await self.hub.send(ws, ErrorOut(message="no labs found in labs/"))
         await self.hub.send(ws, StateOut(value=s.state, detail=s.detail))
         await self.hub.send(ws, ManualOut(step=s.step))
-        if s.probes:
+        if s.probes and not self._probes_dirty:  # if dirty, the next tick sends it to everyone anyway
             await self.hub.send(ws, self._probes_msg())
         for e in s.expects.values():
             await self.hub.send(ws, e)
