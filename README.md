@@ -30,6 +30,8 @@ Hear ALTA's voice: `cd server && uv run python -m bench.voice_out "Row 10 reads 
 
 Every student session is logged to `recordings/<time>-<lab>.jsonl` (gitignored; `BENCH_RECORD_DIR=off` turns it off), and each spoken turn's latency is printed in the server log. Summarize the logs: `cd server && uv run python -m bench.metrics ../recordings/*.jsonl` (turns, probes, hint level, time to fix, latency).
 
+Dev pages on the server: `http://localhost:8000/brain` (what ALTA is doing and what Claude is given; with `POD_PORT=mock` you can stage faults and plug probes by clicking) and `http://localhost:8000/ta` (TA dashboard: the live station plus 5 replayed ones, status only).
+
 Server tests: `cd server && uv run pytest`
 
 ## Docs

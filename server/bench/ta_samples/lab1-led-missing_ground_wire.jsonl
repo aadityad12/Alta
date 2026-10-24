@@ -1,0 +1,26 @@
+{"t": 0.0, "kind": "session", "lab": "lab1-led", "fault": "missing_ground_wire"}
+{"t": 0.019, "kind": "turn", "source": "student"}
+{"t": 0.019, "kind": "state", "value": "thinking"}
+{"t": 1.209, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "10:a-e"}}
+{"t": 1.209, "kind": "state", "value": "speaking"}
+{"t": 1.209, "kind": "state", "value": "idle"}
+{"t": 1.212, "kind": "turn", "source": "event"}
+{"t": 1.212, "kind": "state", "value": "thinking"}
+{"t": 2.541, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "B", "at": "13:a-e"}}
+{"t": 2.541, "kind": "state", "value": "speaking"}
+{"t": 2.541, "kind": "state", "value": "idle"}
+{"t": 2.544, "kind": "turn", "source": "student"}
+{"t": 2.544, "kind": "state", "value": "thinking"}
+{"t": 4.795, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "missing_ground_wire", "confidence": 0.8, "hint_level": 2, "resolved": false}}
+{"t": 4.795, "kind": "state", "value": "speaking"}
+{"t": 4.795, "kind": "state", "value": "idle"}
+{"t": 5.765, "kind": "turn", "source": "student"}
+{"t": 5.765, "kind": "state", "value": "thinking"}
+{"t": 7.539, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "missing_ground_wire", "confidence": 0.8, "hint_level": 3, "resolved": false}}
+{"t": 7.539, "kind": "state", "value": "speaking"}
+{"t": 7.539, "kind": "state", "value": "idle"}
+{"t": 7.542, "kind": "turn", "source": "event"}
+{"t": 7.542, "kind": "state", "value": "thinking"}
+{"t": 9.043, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "missing_ground_wire", "confidence": 0.9, "hint_level": 3, "resolved": true}}
+{"t": 9.043, "kind": "state", "value": "speaking"}
+{"t": 9.043, "kind": "state", "value": "idle"}

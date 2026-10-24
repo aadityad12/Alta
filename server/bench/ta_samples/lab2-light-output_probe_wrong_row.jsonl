@@ -1,0 +1,32 @@
+{"t": 0.0, "kind": "session", "lab": "lab2-light", "fault": "output_probe_wrong_row"}
+{"t": 0.021, "kind": "turn", "source": "student"}
+{"t": 0.021, "kind": "state", "value": "thinking"}
+{"t": 0.999, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "26:a-e"}}
+{"t": 0.999, "kind": "state", "value": "speaking"}
+{"t": 0.999, "kind": "state", "value": "idle"}
+{"t": 1.001, "kind": "turn", "source": "event"}
+{"t": 1.001, "kind": "state", "value": "thinking"}
+{"t": 2.294, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "30:a-e"}}
+{"t": 2.294, "kind": "state", "value": "speaking"}
+{"t": 2.294, "kind": "state", "value": "idle"}
+{"t": 2.297, "kind": "turn", "source": "event"}
+{"t": 2.297, "kind": "state", "value": "thinking"}
+{"t": 4.636, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "output_probe_wrong_row", "confidence": 0.5, "hint_level": 1, "resolved": false}}
+{"t": 4.637, "kind": "state", "value": "speaking"}
+{"t": 4.637, "kind": "state", "value": "idle"}
+{"t": 6.093, "kind": "turn", "source": "student"}
+{"t": 6.093, "kind": "state", "value": "thinking"}
+{"t": 7.722, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "output_probe_wrong_row", "confidence": 0.85, "hint_level": 2, "resolved": false}}
+{"t": 7.722, "kind": "state", "value": "speaking"}
+{"t": 7.722, "kind": "state", "value": "idle"}
+{"t": 9.168, "kind": "turn", "source": "student"}
+{"t": 9.168, "kind": "state", "value": "thinking"}
+{"t": 10.644, "kind": "tool", "name": "show_manual_step", "input": {"step": 4}}
+{"t": 10.644, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "output_probe_wrong_row", "confidence": 0.85, "hint_level": 3, "resolved": false}}
+{"t": 10.645, "kind": "state", "value": "speaking"}
+{"t": 10.645, "kind": "state", "value": "idle"}
+{"t": 10.649, "kind": "turn", "source": "event"}
+{"t": 10.649, "kind": "state", "value": "thinking"}
+{"t": 11.989, "kind": "tool", "name": "record_diagnosis", "input": {"fault_id": "output_probe_wrong_row", "confidence": 0.95, "hint_level": 3, "resolved": true}}
+{"t": 11.989, "kind": "state", "value": "speaking"}
+{"t": 11.989, "kind": "state", "value": "idle"}
