@@ -123,7 +123,7 @@ class ReplayStation:
 
 
 def load_samples(folder: Path = SAMPLES) -> list[list[dict]]:
-    return [[json.loads(line) for line in p.open()] for p in sorted(folder.glob("*.jsonl"))]
+    return [[json.loads(line) for line in p.open(encoding="utf-8")] for p in sorted(folder.glob("*.jsonl"))]
 
 
 class Room:

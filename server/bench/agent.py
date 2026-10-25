@@ -67,7 +67,7 @@ WARM_EVERY_S = 270  # the cache lives 5 minutes; re-warm a bit before that when 
 
 def build_system_prompt(lab) -> str:
     """Persona + teaching rules + the lab. Deterministic, so it stays byte-identical and caches."""
-    parts = [(PROMPTS_DIR / "persona.md").read_text(), (PROMPTS_DIR / "teaching.md").read_text()]
+    parts = [(PROMPTS_DIR / "persona.md").read_text(encoding="utf-8"), (PROMPTS_DIR / "teaching.md").read_text(encoding="utf-8")]
     if lab is None:
         parts.append("# The lab\n\nNo lab is loaded.")
     else:
