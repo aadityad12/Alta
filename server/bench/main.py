@@ -114,8 +114,12 @@ def create_app(
             health.off("voice")
         if use_speaker:
             bench.speaker = await open_speaker()
+            if bench.speaker:
+                tasks.append(asyncio.create_task(bench.speaker.keep_fresh()))  # TTS idle timeout, dead speaker
         if use_mic:
             bench.voice = open_voice()
+            if bench.voice:
+                tasks.append(asyncio.create_task(bench.voice.keep_alive()))  # reopen a mic whose device dropped
         if agent:
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 log.warning("ANTHROPIC_API_KEY is not set (.env); ALTA will answer with its fallback line")
