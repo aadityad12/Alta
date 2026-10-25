@@ -30,7 +30,7 @@ class Lab:
 
 
 def load_lab(lab_dir: Path) -> Lab:
-    data = yaml.safe_load((lab_dir / "lab.yaml").read_text())
+    data = yaml.safe_load((lab_dir / "lab.yaml").read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("lab.yaml is not a mapping")
     manual = lab_dir / "manual.md"
@@ -38,7 +38,7 @@ def load_lab(lab_dir: Path) -> Lab:
         id=str(data.get("id") or lab_dir.name),
         dir=lab_dir,
         data=data,
-        manual_md=manual.read_text() if manual.exists() else "",
+        manual_md=manual.read_text(encoding="utf-8") if manual.exists() else "",
     )
 
 

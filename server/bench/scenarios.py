@@ -307,7 +307,7 @@ async def run_one(lab, fault: dict, n: int, *, client, model: str, effort: str, 
         except Exception as e:
             log.warning("grader failed: %r", e)
             run.rules.setdefault("2 no fix early", []).append(f"grader failed: {type(e).__name__}")
-    (out_dir / f"{lab.id}-{fault['id']}-{n}.txt").write_text(transcript(run))
+    (out_dir / f"{lab.id}-{fault['id']}-{n}.txt").write_text(transcript(run), encoding="utf-8")
     return run
 
 
@@ -514,13 +514,13 @@ async def run_all(args) -> int:
         for r in failed:
             whys = ([f"crashed: {r.crashed}"] if r.crashed else []) + [w for ws in r.rules.values() for w in ws]
             print(f"  {r.lab}/{r.fault} #{r.n}: " + "; ".join(whys))
-    (out_dir / "summary.md").write_text(f"model {model}, effort {args.effort}{', fast' if args.fast else ''}\n\n{table}\n")
+    (out_dir / "summary.md").write_text(f"model {model}, effort {args.effort}{', fast' if args.fast else ''}\n\n{table}\n", encoding="utf-8")
     (out_dir / "runs.json").write_text(json.dumps([{
         "lab": r.lab, "fault": r.fault, "n": r.n, "model": r.model, "passed": r.passed, "resolved": r.resolved,
         "crashed": r.crashed, "rules": r.rules, "turns": len(r.steps), "log": str(r.log_path),
         "steps": [{"source": s.source, "said": s.said, "reply": s.reply, "ms": s.ms, "first_text_ms": s.first_text_ms,
                    "tools": [{k: t[k] for k in ("name", "input", "error")} for t in s.tools]} for s in r.steps],
-    } for r in runs], indent=1, ensure_ascii=False))
+    } for r in runs], indent=1, ensure_ascii=False), encoding="utf-8")
     return 0 if ok else 1
 
 
