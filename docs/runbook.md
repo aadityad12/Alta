@@ -60,6 +60,7 @@ The screen shows a banner for the pod, AI and voice parts (#31), and the server 
 | Banner "ALTA's voice service isn't responding" | Internet again (Cartesia). Captions still appear; type the question instead of talking (`/` on the student screen, the text box on `/brain`) |
 | "I didn't catch that" | Talk after the LED turns green, closer to the laptop. Crowd noise: type instead |
 | No sound, but captions appear | Laptop volume / output device. `SPEAKER_DEVICE` in `.env` (`uv run python -m bench.voice_out --list-devices`) |
+| Sound or mic stops after earbuds connect or disconnect | Pin the built-in devices in `.env`: `MIC_DEVICE` / `SPEAKER_DEVICE` (names from `--list-devices`). ALTA reopens a dropped device by itself, but a pinned one never moves |
 | ALTA ignores the probe you plugged in | It only watches the probe and hole it asked for. Check the gauge shows an expected band, and that the probe is in that exact hole |
 | "the camera didn't answer" in the feed | `/dev/board` must be open, calibrated and in **Live** mode. Only one tab should be in Live mode |
 | Overlays land on the wrong rows (stand got bumped) | `/dev/board` → calibrate again (4 clicks, < 20 s) |
@@ -82,6 +83,8 @@ Do this once per laptop, well before the demo, with internet.
    BENCH_SPEED=fast
    BENCH_VOICE=man          # or woman
    POD_PORT=                # empty = find the Uno by itself
+   MIC_DEVICE=MacBook Air Microphone     # pin the built-in mic + speaker, so
+   SPEAKER_DEVICE=MacBook Air Speakers   # Bluetooth earbuds can't steal them
    ```
    Get the keys from a teammate privately. Never commit `.env` or paste the keys in an issue: the repo is public.
 4. [ ] Run `scripts/dev.sh` once to install everything, then Ctrl-C it.
