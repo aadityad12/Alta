@@ -242,7 +242,7 @@ const LAB_SCHEMATICS: Record<string, { svg: string; steps: StepMap }> = {
     svg: lab1Svg,
     steps: {
       groups: { supply: 1, n_5v: 1, 'r1-body': 2, n_led_anode: 3, 'd1-body': 3, n_led_cathode: 3, W2: 4, n_gnd: 4 },
-      // +5 V, (pod), GND, R1, 220 Ω, D1, Red LED, row 6, row 10, row 13
+      // +5 V, (pod), GND, R1, 220 Ω, D1, Red LED, row 5, row 15, row 20
       labels: [1, 1, 4, 2, 2, 3, 3, 1, 2, 3],
     },
   },

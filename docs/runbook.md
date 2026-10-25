@@ -28,7 +28,7 @@ From the repo root:
 
 1. [ ] Unpack: laptop + charger, pod in its dock + USB cable, lab board + fault kit, phone + stand + tape, hotspot phone (a teammate's, not the camera phone). Tape the board down. The phone lies landscape, lens straight above the middle of the board, rows 1→63 running left to right in the picture.
 2. [ ] Do the [cold start](#cold-start-target--2-min).
-3. [ ] Stage the first fault (Lab 1, **LED reversed**: long leg into 13d, short leg into 10d). The LED is dark. Probes out.
+3. [ ] Stage the first fault (Lab 1, **LED reversed**: long leg into 20e, short leg into 15e). The LED is dark. Probes out.
 4. [ ] Keep the volume reasonable: the table is shared.
 5. [ ] Open the backup video (#40) in a window behind the browser. It plays offline.
 

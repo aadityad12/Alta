@@ -112,18 +112,18 @@ def test_system_prompt_is_stable_and_carries_the_lab():
 
 def test_ask_for_probe_shows_expected_band_and_highlight():
     agent, fake, sent = make(
-        msg(tool("ask_for_probe", probe="Y", at="10c")),
+        msg(tool("ask_for_probe", probe="Y", at="15c")),
         msg("Put the yellow probe in row 10, right after the resistor."),
     )
     reply = run(agent.turn("my LED won't light"))
     assert reply == "Put the yellow probe in row 10, right after the resistor."
-    assert of(sent, "expect") == [{"type": "expect", "probe": "Y", "at": "10c", "expected_mv": 2020,
-                                    "tol_mv": 120, "label": "LED anode"}]
-    assert of(sent, "overlay")[0]["items"] == [{"id": "probe-Y", "kind": "hole", "at": "10c",
+    assert of(sent, "expect") == [{"type": "expect", "probe": "Y", "at": "15c", "expected_mv": 2200,
+                                    "tol_mv": 250, "label": "LED anode"}]
+    assert of(sent, "overlay")[0]["items"] == [{"id": "probe-Y", "kind": "hole", "at": "15c",
                                                "style": "probe-Y", "pulse": True}]
     assert states(sent) == ["thinking", "speaking", "idle"]
     assert of(sent, "transcript")[-1]["text"] == reply
-    assert "expecting about 2020 mV (LED anode)" in last_tool_results(fake.requests[1])[0]["content"]
+    assert "expecting about 2200 mV (LED anode)" in last_tool_results(fake.requests[1])[0]["content"]
     assert_history_valid(agent.messages)
 
 
@@ -149,7 +149,7 @@ def test_bad_tool_input_returns_is_error_and_changes_nothing():
 
 def test_read_probes_reports_readings_and_requests():
     agent, fake, _ = make(
-        msg(tool("ask_for_probe", probe="Y", at="10c")),
+        msg(tool("ask_for_probe", probe="Y", at="15c")),
         msg(tool("read_probes")),
         msg("Row 10 reads about 5 volts."),
         probes=[5012, -1, 3, 0],
@@ -157,7 +157,7 @@ def test_read_probes_reports_readings_and_requests():
     run(agent.turn("I put it there"))
     data = json.loads(last_tool_results(fake.requests[2])[0]["content"])
     y = data["probes"]["Y"]
-    assert (y["mv"], y["asked_at"], y["expected_mv"], y["unplugged"]) == (5012, "10c", 2020, False)
+    assert (y["mv"], y["asked_at"], y["expected_mv"], y["unplugged"]) == (5012, "15c", 2200, False)
     assert data["probes"]["B"]["unplugged"] is True and data["vcc_mv"] == 4990
 
 
@@ -165,8 +165,8 @@ def test_highlight_manual_schematic_and_diagnosis_reach_the_ui_and_session():
     agent, fake, sent = make(
         msg(tool("highlight", mode="replace", items=[
                 {"id": "c1", "kind": "component", "ref": "D1", "style": "attention", "pulse": True},
-                {"id": "a1", "kind": "arrow", "from": "6c", "to": "10c"},
-                {"id": "l1", "kind": "label", "at": "13d", "text": "short leg?"}]),
+                {"id": "a1", "kind": "arrow", "from": "5c", "to": "15c"},
+                {"id": "l1", "kind": "label", "at": "20e", "text": "short leg?"}]),
             tool("show_manual_step", step=3),
             tool("highlight_schematic", nets=["n_led_anode"]),
             tool("record_diagnosis", fault_id="led_reversed", confidence=0.7,
@@ -175,7 +175,7 @@ def test_highlight_manual_schematic_and_diagnosis_reach_the_ui_and_session():
     )
     run(agent.turn("still dark"))
     overlay = of(sent, "overlay")[0]
-    assert overlay["mode"] == "replace" and overlay["items"][1] == {"id": "a1", "kind": "arrow", "from": "6c", "to": "10c"}
+    assert overlay["mode"] == "replace" and overlay["items"][1] == {"id": "a1", "kind": "arrow", "from": "5c", "to": "15c"}
     assert of(sent, "manual") == [{"type": "manual", "step": 3}]
     assert of(sent, "schematic") == [{"type": "schematic", "nets": ["n_led_anode"]}]
     s = agent.bench.session
@@ -196,9 +196,9 @@ def test_tool_rounds_are_capped_and_history_stays_valid():
 
 def test_silent_reply_says_nothing():
     agent, _, sent = make(msg("<silent>"))
-    assert run(agent.turn(event="Yellow at 10c changed 5010 -> 5012 mV")) is None
+    assert run(agent.turn(event="Yellow at 15c changed 5010 -> 5012 mV")) is None
     assert not of(sent, "transcript") and states(sent) == ["thinking", "idle"]
-    assert agent.messages[0]["content"] == "[event] Yellow at 10c changed 5010 -> 5012 mV"
+    assert agent.messages[0]["content"] == "[event] Yellow at 15c changed 5010 -> 5012 mV"
 
 
 def test_events_wait_while_bench_is_busy_and_students_cant_fake_events():
@@ -266,8 +266,8 @@ def test_reset_during_a_turn_drops_the_result():
 def test_typed_text_runs_a_turn_over_the_websocket():
     app = create_app(demo_ui=False, labs_dir=LABS_DIR, pod_port="off")
     app.state.agent._client = FakeClaude(
-        msg(tool("ask_for_probe", probe="Y", at="6c")),
-        msg("Let's start at the top. Put the yellow probe in row 6."),
+        msg(tool("ask_for_probe", probe="Y", at="5c")),
+        msg("Let's start at the top. Put the yellow probe in row 5."),
     )
     with TestClient(app) as c, c.websocket_connect("/ws") as ws:
         inbox = Inbox(ws)
@@ -275,26 +275,26 @@ def test_typed_text_runs_a_turn_over_the_websocket():
         assert inbox.wait_for(lambda m: m["type"] == "transcript")["role"] == "student"
         inbox.state("thinking")
         e = inbox.wait_for(lambda m: m["type"] == "expect")
-        assert (e["probe"], e["at"], e["label"]) == ("Y", "6c", "5 V")
+        assert (e["probe"], e["at"], e["label"]) == ("Y", "5c", "5 V")
         inbox.state("speaking")
         t = inbox.wait_for(lambda m: m["type"] == "transcript")
-        assert (t["role"], t["text"]) == ("bench", "Let's start at the top. Put the yellow probe in row 6.")
+        assert (t["role"], t["text"]) == ("bench", "Let's start at the top. Put the yellow probe in row 5.")
         inbox.state("idle")
 
 
 def test_speak_first_round_ends_the_turn_without_a_second_request():
-    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c"),
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="15c"),
                               tool("record_diagnosis", fault_id="unknown", confidence=0.3, evidence="-",
                                    hint_level=1, resolved=False)))
     assert run(agent.turn("dark LED")) == "Put the yellow probe in row 10."
     assert len(fake.requests) == 1
     last = agent.messages[-1]  # the results wait for the next message
     assert last["role"] == "user" and [c["type"] for c in last["content"]] == ["tool_result", "tool_result"]
-    assert agent.bench.session.expects["Y"].at == "10c"  # the tools still ran
+    assert agent.bench.session.expects["Y"].at == "15c"  # the tools still ran
 
 
 def test_the_next_message_joins_the_unsent_tool_results():
-    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c")),
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="15c")),
                           msg("Good, that's the reading we need."))
     run(agent.turn("dark LED"))
     run(agent.turn(event="Yellow probe now reads a steady 4986 mV."))
@@ -306,7 +306,7 @@ def test_the_next_message_joins_the_unsent_tool_results():
 
 
 def test_a_failed_turn_after_a_speak_first_turn_rolls_back_cleanly():
-    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="10c")),
+    agent, fake, _ = make(msg("Put the yellow probe in row 10.", tool("ask_for_probe", probe="Y", at="15c")),
                           RuntimeError("network"), msg("Okay."))
     run(agent.turn("dark LED"))
     assert run(agent.turn("what now?")) == GLITCH_LINE
@@ -355,5 +355,5 @@ def test_prewarm_sends_the_cached_prefix_with_max_tokens_zero():
 
 
 def test_text_from_an_earlier_round_is_used_if_the_last_round_has_none():
-    agent, _, _ = make(msg("Put the yellow probe in row 6.", tool("ask_for_probe", probe="Y", at="6c")), msg())
-    assert run(agent.turn("hi")) == "Put the yellow probe in row 6."
+    agent, _, _ = make(msg("Put the yellow probe in row 5.", tool("ask_for_probe", probe="Y", at="5c")), msg())
+    assert run(agent.turn("hi")) == "Put the yellow probe in row 5."

@@ -92,7 +92,7 @@ def test_never_confirming_says_why():
 def test_whole_run_with_the_mock_pod_and_monitor(tmp_path):
     fake = FakeClaude(
         # turn 1 (student opener): ask for the yellow probe in row 10
-        msg(tool("ask_for_probe", probe="Y", at="10c")),
+        msg(tool("ask_for_probe", probe="Y", at="15c")),
         msg("Put the yellow probe in row 10."),
         # turn 2 (the monitor saw it land): point at the LED -> the student fixes it
         msg(tool("record_diagnosis", fault_id="led_reversed", confidence=0.8, evidence="row 10 at 5 V",
@@ -106,8 +106,8 @@ def test_whole_run_with_the_mock_pod_and_monitor(tmp_path):
     run = asyncio.run(run_one(LABS["lab1-led"], FAULT, 1, client=fake, model="fake", effort="low",
                               out_dir=tmp_path, grade=False, verbose=False))
     assert [s.source for s in run.steps] == ["student", "event", "event"]
-    assert "Yellow probe (asked for 10c" in run.steps[1].said and "outside the expected range" in run.steps[1].said
-    assert run.steps[1].actions == ["unplug Y", "sleep 0.4", "Y 10c"]
+    assert "Yellow probe (asked for 15c" in run.steps[1].said and "outside the expected range" in run.steps[1].said
+    assert run.steps[1].actions == ["unplug Y", "sleep 0.4", "Y 15c"]
     assert run.steps[2].actions == ["fix"] and "is now in the expected range" in run.steps[2].said
     assert run.passed, run.rules
     assert run.log_path and run.log_path.exists()

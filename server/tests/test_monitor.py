@@ -79,7 +79,7 @@ class Rig:
             out += self.run(TICK)
         return out
 
-    def ask(self, probe="Y", at="10c", net="n_led_anode") -> None:
+    def ask(self, probe="Y", at="15c", net="n_led_anode") -> None:
         n = next(x for x in LABS[self.bench.session.lab_id].data["nets"] if x["id"] == net)
         e = ExpectOut(probe=probe, at=at, expected_mv=n["expected_mv"], tol_mv=n["tol_mv"], label=n["label"])
         asyncio.run(self.bench.session.expect(e))
@@ -94,10 +94,10 @@ def test_plugging_the_asked_probe_is_reported_once_it_holds_still():
     rig = Rig(scenario="led_reversed")
     rig.ask()
     assert rig.run(2.0) == []  # floating on the desk: never steady
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     got = rig.run(3.0)
     assert len(got) == 1
-    assert got[0].startswith("Yellow probe (asked for 10c, LED anode) now reads a steady 49")
+    assert got[0].startswith("Yellow probe (asked for 15c, LED anode) now reads a steady 49")
     assert "outside the expected range" in got[0]
     assert rig.heard[0][0] - 2.0 <= 0.6  # 500 ms of steady + one sample
 
@@ -106,8 +106,8 @@ def test_contact_bounce_is_never_reported():
     rig = Rig()
     rig.ask()
     rig.run(1.0)
-    assert rig.bounce("Y", "10c", 0.6) == []
-    rig.do("Y 10c")
+    assert rig.bounce("Y", "15c", 0.6) == []
+    rig.do("Y 15c")
     got = rig.run(3.0)
     assert len(got) == 1 and "in the expected range" in got[0]
 
@@ -122,7 +122,7 @@ def test_unplugged_reading_minus_one_is_never_steady():
 def test_steady_probe_is_reported_once_not_again():
     rig = Rig()
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     assert len(rig.run(1.0)) == 1
     assert rig.run(10.0) == []
 
@@ -130,20 +130,20 @@ def test_steady_probe_is_reported_once_not_again():
 def test_fixing_the_fault_is_confirmed_automatically():
     rig = Rig(scenario="led_reversed")
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.5)
     rig.do("fix")
     got = rig.run(2.0)
     assert len(got) == 1
-    assert "is now in the expected range: a steady 19" in got[0] or "is now in the expected range: a steady 20" in got[0]
+    assert "is now in the expected range: a steady 2" in got[0]  # ~2.2 V, the LED anode
     assert "It read 49" in got[0]
     assert rig.monitor.detectors["Y"].last_in_band is True
 
 
 def test_fix_via_the_dim_resistor_crosses_the_band():
-    rig = Rig(scenario="wrong_resistor_10k")  # 1760 mV, just under 2020 ± 120 (measured, #4)
+    rig = Rig(scenario="wrong_resistor_10k")  # 1760 mV, under 2200 ± 250 (measured, #4)
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     assert "outside the expected range" in rig.run(1.0)[0]
     rig.do("fix")
     got = rig.run(1.5)
@@ -153,11 +153,11 @@ def test_fix_via_the_dim_resistor_crosses_the_band():
 def test_a_jiggle_that_comes_back_is_not_news():
     rig = Rig()
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     rig.do("unplug Y")
     rig.run(0.3)  # long enough to look moved
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     assert rig.run(2.0) == []
 
 
@@ -165,18 +165,18 @@ def test_moving_between_holes_at_the_same_voltage_still_answers_the_request():
     rig = Rig()
     rig.do("Y rail:a+")
     rig.run(1.0)
-    rig.ask(at="6c", net="n_5v")  # the probe already reads 5 V, so only the move tells us
+    rig.ask(at="5c", net="n_5v")  # the probe already reads 5 V, so only the move tells us
     assert rig.run(1.0) == []  # ALTA says where to put it
     rig.do("unplug Y")
     rig.run(0.4)
-    rig.do("Y 6c")
+    rig.do("Y 5c")
     got = rig.run(1.5)
     assert len(got) == 1 and "in the expected range" in got[0]
 
 
 def test_already_in_place_when_asked_is_not_reported():
     rig = Rig()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     rig.ask()
     assert rig.run(3.0) == []
@@ -195,7 +195,7 @@ def test_a_humming_wire_is_not_steady():
 def test_probes_nobody_asked_for_are_ignored():
     rig = Rig()
     rig.ask(probe="Y")
-    rig.do("B 10c", "G rail:a+")
+    rig.do("B 15c", "G rail:a+")
     assert rig.run(2.0) == []
 
 
@@ -215,15 +215,15 @@ def test_hovering_at_the_band_edge_does_not_flap():
 def test_a_new_request_starts_over():
     rig = Rig()
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
-    rig.ask(at="13c", net="n_led_cathode")
+    rig.ask(at="20c", net="n_led_cathode")
     rig.run(1.0)
     rig.do("unplug Y")
     rig.run(0.4)
-    rig.do("Y 13c")
+    rig.do("Y 20c")
     got = rig.run(1.5)
-    assert len(got) == 1 and got[0].startswith("Yellow probe (asked for 13c, LED cathode) now reads a steady")
+    assert len(got) == 1 and got[0].startswith("Yellow probe (asked for 20c, LED cathode) now reads a steady")
 
 
 def test_lab2_covering_the_sensor_is_reported():
@@ -241,7 +241,7 @@ def test_lab2_covering_the_sensor_is_reported():
 def test_events_wait_while_anyone_is_talking():
     rig = Rig()
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     for busy in (State.listening, State.transcribing, State.thinking, State.speaking, State.error):
         rig.state(busy)
         assert rig.run(1.5) == []
@@ -253,9 +253,9 @@ def test_events_wait_while_anyone_is_talking():
 def test_two_probes_go_out_as_one_message():
     rig = Rig(scenario="led_reversed")
     rig.ask(probe="Y")
-    rig.ask(probe="B", at="13c", net="n_led_cathode")
+    rig.ask(probe="B", at="20c", net="n_led_cathode")
     rig.state(State.speaking)
-    rig.do("Y 10c", "B 13c")
+    rig.do("Y 15c", "B 20c")
     rig.run(1.5)
     rig.state(State.idle)
     got = rig.run(TICK)
@@ -266,7 +266,7 @@ def test_stale_events_are_dropped():
     rig = Rig()
     rig.ask()
     rig.state(State.listening)
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0 + MAX_AGE_S)
     rig.state(State.idle)
     assert rig.run(1.0) == []
@@ -276,7 +276,7 @@ def test_reset_forgets_everything():
     rig = Rig()
     rig.ask()
     rig.state(State.speaking)
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     rig.bench.session.clear()
     rig.state(State.idle)
@@ -288,7 +288,7 @@ def test_a_waiting_event_for_a_cleared_request_is_dropped():
     rig = Rig()
     rig.ask()
     rig.state(State.speaking)
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     asyncio.run(rig.bench.session.expect(ExpectOut(probe="Y", clear=True)))
     rig.state(State.idle)
@@ -300,7 +300,7 @@ def test_cleared_request_stops_watching():
     rig.ask()
     rig.run(0.5)
     asyncio.run(rig.bench.session.expect(ExpectOut(probe="Y", clear=True)))
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     assert rig.run(2.0) == []
 
 
@@ -310,7 +310,7 @@ def test_agent_reacts_to_the_probe_with_no_button_press_and_only_once():
     async def main():
         rig = Rig(scenario="led_reversed")
         fake = FakeClaude(
-            msg(tool("ask_for_probe", probe="Y", at="10c")),
+            msg(tool("ask_for_probe", probe="Y", at="15c")),
             msg("Put the yellow probe in row 10."),
             msg("Row 10 reads the full 5 volts. What would the resistor do if current were flowing?"),
             msg("<silent>"),
@@ -319,8 +319,8 @@ def test_agent_reacts_to_the_probe_with_no_button_press_and_only_once():
         task = asyncio.create_task(agent.run())
         await asyncio.sleep(0)
         await agent.turn("my LED won't light")
-        assert rig.bench.session.expects["Y"].at == "10c"
-        rig.do("Y 10c")
+        assert rig.bench.session.expects["Y"].at == "15c"
+        rig.do("Y 15c")
         for _ in range(60):  # 3 s of samples, letting the agent run between them
             rig.run(TICK)
             await asyncio.sleep(0.01)
@@ -330,7 +330,7 @@ def test_agent_reacts_to_the_probe_with_no_button_press_and_only_once():
     fake, rig = asyncio.run(main())
     assert len(fake.requests) == 3  # the student's turn (2 rounds) + exactly one probe reaction
     last_user = fake.requests[2]["messages"][-1]["content"]
-    assert last_user.startswith("[event] Yellow probe (asked for 10c, LED anode) now reads a steady 49")
+    assert last_user.startswith("[event] Yellow probe (asked for 15c, LED anode) now reads a steady 49")
     said = [m["text"] for m in rig.sent if m["type"] == "transcript" and m["role"] == "bench"]
     assert said[-1].startswith("Row 10 reads the full 5 volts")
 
@@ -341,12 +341,12 @@ def test_no_double_reactions_in_five_tries(seed):
     rig = Rig(scenario="led_reversed", seed=seed)
     rig.ask()
     rig.run(1.0)
-    rig.bounce("Y", "10c", 0.4)
-    rig.do("Y 10c")
+    rig.bounce("Y", "15c", 0.4)
+    rig.do("Y 15c")
     rig.run(3.0)
     rig.do("unplug Y")  # bumped while fixing the LED
     rig.run(0.1)
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     rig.do("fix")
     rig.run(3.0)
