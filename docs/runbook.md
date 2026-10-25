@@ -4,7 +4,9 @@ How to get ALTA from a powered-off laptop to demo-ready, keep it running at the 
 
 **The demo laptop** is whichever laptop the pod is plugged into. The server has to run on that laptop, because it reads the pod over USB and plays ALTA's voice through that laptop's speaker. Any laptop works if it has gone through [one-time setup](#one-time-setup-on-a-new-laptop) once.
 
-> Until the student screen (#28–#30) is in `web/`, two dev pages stand in for it: **`http://localhost:8000/brain`** (transcript, gauges, talk button, New student) and **`http://localhost:5173/dev/board`** (camera, calibration, overlays). Once the student screen lands, open `http://localhost:5173` instead of `/brain`.
+> The student screen is **`http://localhost:5173`** (in Safari). The dev pages are still there for debugging: `http://localhost:8000/brain` (what ALTA is doing) and `http://localhost:8000/ta` (TA dashboard).
+>
+> **Don't ask ALTA to look at the board during the demo.** The camera's hole mapping isn't accurate yet (#20), so its highlights can land in the wrong place. Teach from the probes. The automatic board watcher is off by default (`BENCH_WATCH=1` turns it on).
 
 ## Cold start (target < 2 min)
 
@@ -19,9 +21,8 @@ From the repo root:
    Every line should be ✓, ending in **Ready for the demo.** You hear "ALTA is ready." Fix any ✗ with the line under it, then run it again.
 4. [ ] Start ALTA: `scripts/dev.sh`. Leave this terminal open; Ctrl-C stops everything.
 5. [ ] In the browser:
-   - `http://localhost:5173/dev/board`: pick the phone camera, calibrate (click the 4 corner holes it asks for), choose **Lab 1**, switch **Live** on.
+   - `http://localhost:5173` in Safari: allow the camera, pick the phone, calibrate (click the 4 corner holes it asks for), and start **Lab 1**. Mac Bluetooth must be on, or the phone won't be listed.
    - **Use Safari for any page with the camera.** Chrome can leave the iPhone (Continuity Camera) out of its camera list even when macOS and FaceTime see it (seen 2026-10-25, Chrome 155 / macOS 26). Each browser keeps its own calibration, so calibrate in the browser you demo with.
-   - `http://localhost:8000/brain`: Lab 1 is loaded and the state is `idle`.
 6. [ ] Quick check: touch the yellow probe to the 5 V rail, and its gauge reads about 5 V. Hold the pod button, say "Can you hear me?", and ALTA answers out loud.
 
 ## Judging day: table setup (#46)
@@ -34,7 +35,7 @@ From the repo root:
 
 ### Between judges (< 15 s)
 
-1. [ ] **New student**: the button on `/brain` (`N` on the student screen). This clears the conversation and the highlights.
+1. [ ] **New student**: press `N` on the student screen, or the **New student** button on the finished screen and the lab picker. This clears the conversation and the highlights.
 2. [ ] Pull all probes out.
 3. [ ] Put the fault back: flip the LED back into the reversed position.
 
@@ -58,7 +59,7 @@ The screen shows a banner for the pod, AI and voice parts (#31), and the server 
 | Banner "Plug the pod's USB cable back in" / gauges frozen | Replug the USB. It reconnects by itself in under 2 s. Still nothing: another program has the port (close `live.py`, `bringup.py`, Arduino serial monitor) |
 | The log repeats `pod connection lost: no data within 3 s of opening` (the port is there, but the pod is silent) | The Uno's USB chip is stuck. Unplug the USB for **10 s**, then plug it back in. Its L LED flickering fast means the firmware itself is fine |
 | Banner "ALTA can't reach its brain" / ALTA says "Sorry, my brain glitched" | Internet. Switch to the hotspot; the next question works, no restart needed |
-| Banner "ALTA's voice service isn't responding" | Internet again (Cartesia). Captions still appear; type the question instead of talking (`/` on the student screen, the text box on `/brain`) |
+| Banner "ALTA's voice service isn't responding" | Internet again (Cartesia). Captions still appear; type the question instead of talking (`/` on the student screen) |
 | "I didn't catch that" | Talk after the LED turns green, closer to the laptop. Crowd noise: type instead |
 | No sound, but captions appear | Laptop volume / output device. `SPEAKER_DEVICE` in `.env` (`uv run python -m bench.voice_out --list-devices`) |
 | Sound or mic stops after earbuds connect or disconnect | Pin the built-in devices in `.env`: `MIC_DEVICE` / `SPEAKER_DEVICE` (names from `--list-devices`). ALTA reopens a dropped device by itself, but a pinned one never moves |
