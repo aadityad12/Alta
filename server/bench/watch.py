@@ -8,8 +8,8 @@ compare the board with the answer key, then point at a misplaced part (the wrong
 green, an arrow between them) or stay silent. Silent looks are dropped from the conversation.
 
 Work done while anyone was talking is ignored: that turn, or the probe monitor (#21), already covered it,
-and a second reaction to the same move is exactly what the student shouldn't get. BENCH_WATCH=0 turns
-the watcher off.
+and a second reaction to the same move is exactly what the student shouldn't get. Off by default:
+BENCH_WATCH=1 turns the watcher on.
 """
 
 import asyncio
@@ -59,7 +59,8 @@ LOOK = (
 
 
 def enabled() -> bool:
-    return os.environ.get("BENCH_WATCH", "1").strip().lower() not in ("0", "off", "no", "false")
+    """Off unless BENCH_WATCH=1: the camera's hole mapping isn't reliable enough yet (#20)."""
+    return os.environ.get("BENCH_WATCH", "0").strip().lower() in ("1", "on", "yes", "true")
 
 
 def small_gray(jpeg: bytes) -> np.ndarray:
@@ -116,7 +117,7 @@ class Watcher:
         self._gen = bench.session.generation
 
     async def run(self) -> None:
-        log.info("board watcher on: ALTA looks %.0f s after the student lets go of the board (BENCH_WATCH=0: off)",
+        log.info("board watcher on: ALTA looks %.0f s after the student lets go of the board (BENCH_WATCH=1)",
                  STILL_S)
         while True:
             await asyncio.sleep(POLL_S)
