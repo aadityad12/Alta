@@ -1,0 +1,107 @@
+/* Alta design tokens and type styles, from the Figma design system (#26).
+   Lato for body text, DM Mono for the brand, H1, H2 and H3. Shadows instead of strokes. */
+
+@import 'lato-font/css/lato-font.css';
+@import '@fontsource/dm-mono/500.css';
+
+:root {
+  --ink: #222222;
+  --ink-80: rgb(34 34 34 / 0.8);
+  --ink-60: rgb(34 34 34 / 0.6);
+  --ink-40: rgb(34 34 34 / 0.4);
+  --ink-20: rgb(34 34 34 / 0.2);
+  --ink-10: rgb(34 34 34 / 0.1);
+  --paper: #fffffe;
+  --paper-60: rgb(255 255 254 / 0.6);
+  --paper-40: rgb(255 255 254 / 0.4);
+  --paper-20: rgb(255 255 254 / 0.2);
+  --paper-10: rgb(255 255 254 / 0.1);
+  --blue: #538beb;
+  --blue-10: rgb(83 139 235 / 0.1);
+  --orange: #d67039;
+  --orange-10: rgb(214 112 57 / 0.1);
+
+  /* probe wire colours: functional, not brand (ProbeBadge) */
+  --probe-Y: #f2c14e;
+  --probe-B: #538beb;
+  --probe-G: #4daf7c;
+  --probe-W: #fffffe;
+
+  --shadow-soft: 0 1px 3px rgb(34 34 34 / 0.06), 0 6px 16px rgb(34 34 34 / 0.08);
+  --shadow-raised: 0 2px 6px rgb(34 34 34 / 0.06), 0 16px 40px rgb(34 34 34 / 0.12);
+
+  --mono: 'DM Mono', ui-monospace, monospace;
+  --sans: Lato, system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/24px var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+p,
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+/* type styles (Figma text styles) */
+.t-h1 { font: 500 32px/40px var(--mono); }
+.t-h2 { font: 500 24px/32px var(--mono); }
+.t-h3 { font: 500 20px/28px var(--mono); }
+.t-body { font: 400 16px/24px var(--sans); }
+.t-body-l { font: 400 18px/28px var(--sans); }
+.t-strong { font: 600 16px/24px var(--sans); }
+.t-label { font: 600 16px/22px var(--sans); }
+.t-label-l { font: 600 18px/26px var(--sans); }
+.t-caption { font: 400 20px/30px var(--sans); }
+.t-reading { font: 700 32px/38px var(--sans); }
+
+@media (max-width: 599px) {
+  .t-h1 { font-size: 26px; line-height: 34px; }
+  .t-h2 { font-size: 20px; line-height: 28px; }
+  .t-h3 { font-size: 18px; line-height: 26px; }
+  .t-reading { font-size: 28px; line-height: 34px; }
+}
+
+.c-60 { color: var(--ink-60); }
+.c-40 { color: var(--ink-40); }
+.c-blue { color: var(--blue); }
+
+.spacer {
+  flex: 1 0 0;
+  min-width: 1px;
+  min-height: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
