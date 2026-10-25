@@ -65,6 +65,7 @@ class Session:
     state: State = State.idle
     detail: str | None = None
     generation: int = 0  # bumped on every reset, so long-running tasks can notice
+    busy_count: int = 0  # bumped every time the state leaves idle (the board watcher sees even short turns)
     health: Health = field(init=False)  # what's broken right now (#31); reset() leaves it alone
 
     def __post_init__(self) -> None:
@@ -76,6 +77,8 @@ class Session:
         if not can_transition(self.state, new):
             log.warning("refused state change %s -> %s", self.state.value, new.value)
             return False
+        if self.state is State.idle and new is not State.idle:
+            self.busy_count += 1
         self.state, self.detail = new, detail
         self.record("state", value=new.value, detail=detail)
         await self.broadcast(StateOut(value=new, detail=detail))

@@ -4,7 +4,6 @@ Every tool validates its input against the current lab and returns (text, is_err
 reaches the UI; Claude gets a clear error back instead and can try again.
 """
 
-import asyncio
 import base64
 import io
 import itertools
@@ -26,7 +25,6 @@ from .protocol import (
     OverlayClearOut,
     OverlayItem,
     OverlayOut,
-    RequestFrameOut,
     SchematicOut,
 )
 
@@ -331,17 +329,10 @@ class ToolBox:
             raise ToolError("You've already looked at the board this turn. Use what you saw, or measure with a probe.")
         self.frames_left -= 1
         frame_id = f"f{next(self._frame_ids)}"
-        waiter = asyncio.get_running_loop().create_future()
-        bench.frame_waiters[frame_id] = waiter
-        try:
-            await bench.hub.broadcast(RequestFrameOut(id=frame_id))
-            async with asyncio.timeout(FRAME_TIMEOUT_S):
-                frame = await waiter
-        except TimeoutError:
+        frame = await bench.grab_frame(frame_id, FRAME_TIMEOUT_S)
+        if frame is None:
             raise ToolError(f"The camera didn't send a photo within {FRAME_TIMEOUT_S:.0f} s. Rely on the probes, or "
-                            "ask the student what they see.") from None
-        finally:
-            bench.frame_waiters.pop(frame_id, None)
+                            "ask the student what they see.")
         try:
             jpeg, w, h = _downscale(base64.b64decode(frame.jpeg_b64, validate=True))
         except Exception as e:

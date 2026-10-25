@@ -20,6 +20,7 @@ from .protocol import (
     OverlayClearOut,
     ProbesOut,
     PttIn,
+    RequestFrameOut,
     ResetIn,
     SelectLabIn,
     State,
@@ -102,6 +103,22 @@ class Bench:
 
     def disconnect(self, ws: WebSocket) -> None:
         self.hub.clients.discard(ws)
+
+    # ---------- camera ----------
+
+    async def grab_frame(self, frame_id: str, timeout: float) -> FrameIn | None:
+        """Ask the student screen for a camera frame (request_frame) and wait for it. None if no screen answers
+        within `timeout`. Silent on the screen: look_at_board (#20) and the board watcher both use it."""
+        waiter = asyncio.get_running_loop().create_future()
+        self.frame_waiters[frame_id] = waiter
+        try:
+            await self.hub.broadcast(RequestFrameOut(id=frame_id))
+            async with asyncio.timeout(timeout):
+                return await waiter
+        except TimeoutError:
+            return None
+        finally:
+            self.frame_waiters.pop(frame_id, None)
 
     # ---------- event handling ----------
 

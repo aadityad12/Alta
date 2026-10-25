@@ -21,9 +21,15 @@ student already heard, so it isn't repeated.
 
 Latency (#22): a student turn with no text after FILLER_S gets a short "Mm, let me check." and the
 prompt cache is pre-warmed for the current lab (keep_warm).
+
+Stuck (the user's rule): hints are good, but a student who keeps asking gets the answer. After STUCK_TURNS
+questions on one problem, or STUCK_S with at least STUCK_MIN_TURNS of them, every turn carries a `[coach]`
+note telling Claude to give the fix and explain it. A confirmed fix (record_diagnosis resolved) or
+PROBLEM_GAP_S without a question starts the count over.
 """
 
 import asyncio
+import base64
 import itertools
 import json
 import logging
@@ -63,6 +69,14 @@ NOTHING_SAID = "The student hasn't heard anything from you this turn. What you w
 FILLER_S = 2.5  # BENCH_FILLER_S; 0 = off. Only slow turns get one, and never two turns in a row
 FILLER_LINES = ("Mm, let me check.", "Okay, one sec.", "Hmm, let me look.")
 WARM_EVERY_S = 270  # the cache lives 5 minutes; re-warm a bit before that when nothing else has used it
+STUCK_TURNS = int(os.environ.get("BENCH_STUCK_TURNS", "4"))  # questions on one problem before ALTA gives the fix
+STUCK_S = float(os.environ.get("BENCH_STUCK_S", "180"))  # ...or this long since the first one,
+STUCK_MIN_TURNS = 2  # ...with at least this many questions
+PROBLEM_GAP_S = 300.0  # no question for this long: the next one starts a new problem
+COACH_NOTE = ("[coach] The student has asked about this {turns} times over {mins} without fixing it. Stop hinting "
+              "now and give the fix (hint level 4): say exactly what's wrong and how to fix it, then explain why in "
+              "plain words. You may use up to four sentences this time. If you don't know the fault yet, say what "
+              "you'll check and measure it first.")
 
 
 def build_system_prompt(lab) -> str:
@@ -121,6 +135,9 @@ class Agent:
         self._filler_spoke = False
         self._last_request = 0.0  # time.monotonic() of the last request (or pre-warm) that used the cache
         self._warm_key: tuple | None = None
+        self.clock: Callable[[], float] = time.monotonic
+        self.turns_run = 0  # turns that actually ran (an event turn is refused if someone is talking)
+        self._stuck_reset()
 
     @property
     def client(self):
@@ -132,6 +149,7 @@ class Agent:
         """Forget the conversation. Happens by itself on reset / select_lab (they bump session.generation)."""
         self.messages = []
         self._gen = self.bench.session.generation
+        self._stuck_reset()
 
     def system_prompt(self) -> str:
         lab = self.bench.lab
@@ -161,8 +179,13 @@ class Agent:
 
     # ---------- one turn ----------
 
-    async def turn(self, text: str | None = None, *, event: str | None = None) -> str | None:
-        """Run one turn. Returns what ALTA said, or None if it stayed silent."""
+    async def turn(self, text: str | None = None, *, event: str | None = None, images: list[bytes] | None = None,
+                   forget_if_silent: bool = False, frames: int | None = None) -> str | None:
+        """Run one turn. Returns what ALTA said, or None if it stayed silent.
+
+        images: JPEGs sent with the message (the board watcher's photo). forget_if_silent: a silent turn is
+        dropped from the history (a quiet look at the board isn't worth re-sending every turn). frames:
+        look_at_board budget for this turn, instead of the usual one."""
         async with self._lock:
             s = self.bench.session
             if event is not None and s.state is not State.idle:
@@ -170,12 +193,22 @@ class Agent:
             if s.generation != self._gen:  # reset or new lab since the last turn
                 self.clear()
             gen, msgs = s.generation, self.messages
+            self.turns_run += 1
             self.tools.new_turn(None if event is not None else text)
+            if frames is not None:
+                self.tools.frames_left = frames
             s.record("turn", source="event" if event is not None else "student", text=event if event is not None else text)
             self._text_seen = False
             # "[event]" is the server's marker; a student can't produce one by saying it
-            said = f"[event] {event}" if event is not None else (text or "").replace("[event]", "(event)").strip()
-            start, kept = self._add_user(msgs, said)
+            said = f"[event] {event}" if event is not None else (
+                (text or "").replace("[event]", "(event)").replace("[coach]", "(coach)").strip())
+            now = self.clock()
+            if event is None:
+                self._count_question(now)
+            if note := self._coach_note(now):
+                said = f"{said}\n\n{note}"
+                s.record("coach", turns=self._q_count)
+            start, kept = self._add_user(msgs, said, images or ())
             await s.set_state(State.thinking)
             self._live, self._reply_live, self._owner = [], False, object()
             filler_again, self._filler_spoke = self._filler_spoke, False
@@ -206,6 +239,8 @@ class Agent:
             await self._finish_live()
             s.record("turn_end", reply=reply, silent=not reply or reply.strip() == SILENT)
             if not reply or reply.strip() == SILENT:
+                if forget_if_silent:
+                    self._rollback(msgs, start, kept)
                 if s.state is State.thinking or (self._filler_spoke and s.state is State.speaking):
                     await s.set_state(State.idle)
                 return None
@@ -217,16 +252,51 @@ class Agent:
             return reply
 
     @staticmethod
-    def _add_user(msgs: list, text: str) -> tuple[int, int | None]:
-        """Append the user's message. If the history ends in tool results that haven't been sent yet (a
-        speak-first round ended the last turn), the text joins that message: two user messages in a row
-        would be a 400. Returns how to roll it back: (len(msgs) before, len of the joined content or None)."""
+    def _add_user(msgs: list, text: str, images=()) -> tuple[int, int | None]:
+        """Append the user's message (images first, then the text). If the history ends in tool results that
+        haven't been sent yet (a speak-first round ended the last turn), it joins that message: two user
+        messages in a row would be a 400. Returns how to roll it back: (len(msgs) before, len of the joined
+        content or None)."""
+        blocks = [_image_block(j) for j in images] + [{"type": "text", "text": text}]
         if msgs and msgs[-1]["role"] == "user" and isinstance(msgs[-1]["content"], list):
             kept = len(msgs[-1]["content"])
-            msgs[-1]["content"].append({"type": "text", "text": text})
+            msgs[-1]["content"].extend(blocks)
             return len(msgs), kept
-        msgs.append({"role": "user", "content": text})
+        msgs.append({"role": "user", "content": blocks if images else text})
         return len(msgs) - 1, None
+
+    # ---------- stuck: when hints stop and the answer comes ----------
+
+    def _stuck_reset(self) -> None:
+        self._q_count = 0
+        self._q_first: float | None = None
+        self._q_last: float | None = None
+        self._resolved_seen = 0
+
+    def _new_problem_if_due(self, now: float) -> None:
+        resolved = sum(1 for d in self.bench.session.diagnoses if d.get("resolved"))
+        gap = self._q_last is not None and now - self._q_last > PROBLEM_GAP_S
+        if resolved != self._resolved_seen or gap:
+            self._stuck_reset()
+            self._resolved_seen = resolved
+
+    def _count_question(self, now: float) -> None:
+        self._new_problem_if_due(now)
+        self._q_count += 1
+        if self._q_first is None:
+            self._q_first = now
+        self._q_last = now
+
+    def _coach_note(self, now: float) -> str | None:
+        """The [coach] note when the student has been stuck long enough, else None."""
+        self._new_problem_if_due(now)
+        if self._q_first is None:
+            return None
+        elapsed = now - self._q_first
+        if self._q_count >= STUCK_TURNS or (self._q_count >= STUCK_MIN_TURNS and elapsed >= STUCK_S):
+            mins = "less than a minute" if elapsed < 60 else f"about {round(elapsed / 60)} minutes"
+            return COACH_NOTE.format(turns=self._q_count, mins=mins)
+        return None
 
     @staticmethod
     def _rollback(msgs: list, start: int, kept: int | None) -> None:
@@ -419,6 +489,11 @@ class Agent:
         await s.set_state(State.speaking)
         await s.say("bench", text)
         await s.set_state(State.idle)
+
+
+def _image_block(jpeg: bytes) -> dict[str, Any]:
+    return {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                        "data": base64.b64encode(jpeg).decode()}}
 
 
 async def _lines(items):
