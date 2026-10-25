@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
 from . import bus as ev
-from . import ta
+from . import ta, watch
 from .agent import Agent
 from .brain import MockBoard, mount
 from .bus import Event
@@ -53,6 +53,7 @@ def create_app(
         bench.session.pod_command = pod.send
     agent = None if demo_ui else Agent(bench, pod_connected=lambda: mock_board or bool(pod and pod.connected))
     monitor = Monitor(bench) if agent else None  # probe changes -> agent turns, no button press (#21)
+    watcher = watch.Watcher(bench, agent) if agent and watch.enabled() else None  # ALTA looks when the student lets go
     if mic is None:
         mic = os.environ.get("MIC_DEVICE", "")
     use_mic = agent is not None and mic.strip().lower() not in MIC_OFF
@@ -126,6 +127,8 @@ def create_app(
             log.info("agent model: %s%s", agent.model, " (fast mode)" if agent.speed == "fast" else "")
             tasks.append(asyncio.create_task(agent.run()))
             tasks.append(asyncio.create_task(monitor.run()))
+            if watcher:
+                tasks.append(asyncio.create_task(watcher.run()))
             if os.environ.get("ANTHROPIC_API_KEY"):
                 tasks.append(asyncio.create_task(agent.keep_warm()))  # prompt cache warm for the current lab (#22)
         yield
@@ -149,6 +152,7 @@ def create_app(
     app.state.pod = pod
     app.state.agent = agent
     app.state.monitor = monitor
+    app.state.watcher = watcher
 
     @app.get("/health")
     def health() -> dict:
