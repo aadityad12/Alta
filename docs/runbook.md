@@ -55,6 +55,7 @@ The screen shows a banner for the pod, AI and voice parts (#31), and the server 
 | What you see | What to do |
 |---|---|
 | Banner "Plug the pod's USB cable back in" / gauges frozen | Replug the USB. It reconnects by itself in under 2 s. Still nothing: another program has the port (close `live.py`, `bringup.py`, Arduino serial monitor) |
+| The log repeats `pod connection lost: no data within 3 s of opening` (the port is there, but the pod is silent) | The Uno's USB chip is stuck. Unplug the USB for **10 s**, then plug it back in. Its L LED flickering fast means the firmware itself is fine |
 | Banner "ALTA can't reach its brain" / ALTA says "Sorry, my brain glitched" | Internet. Switch to the hotspot; the next question works, no restart needed |
 | Banner "ALTA's voice service isn't responding" | Internet again (Cartesia). Captions still appear; type the question instead of talking (`/` on the student screen, the text box on `/brain`) |
 | "I didn't catch that" | Talk after the LED turns green, closer to the laptop. Crowd noise: type instead |
