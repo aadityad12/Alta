@@ -56,7 +56,7 @@ def spoken_turns(recs: list[dict]) -> list[dict[str, float]]:
 
 def load(path: Path) -> list[dict]:
     recs = []
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         try:
             recs.append(json.loads(line))
         except ValueError:

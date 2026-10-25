@@ -62,6 +62,9 @@ class FakePlayer:
     def pending(self):
         return 0
 
+    def alive(self):
+        return True
+
 
 def speaker_for(session, conn=None):
     sp = Speaker(session, FakePlayer(), voice_id="v1", speed=1.1)
@@ -158,6 +161,113 @@ def test_tts_failure_puts_voice_down_until_it_speaks_again():
     assert conn.contexts[0].pushed == ["Second try. "] and len(sp.player.written) == 1
 
 
+class DeadConn(FakeConn):
+    """A websocket Cartesia already closed: opening a context works locally, pushing to it fails."""
+
+    def context(self, **kw):
+        ctx = super().context(**kw)
+
+        async def closed(text):
+            raise ConnectionError("connection idle timeout")
+
+        ctx.push = closed
+        return ctx
+
+
+def test_a_websocket_cartesia_closed_is_reopened_and_the_line_still_spoken():
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    dead, fresh = DeadConn(), FakeConn()
+    sp._conn = dead
+
+    async def reconnect():
+        if sp._conn is None:
+            sp._conn = fresh
+        return sp._conn
+
+    sp.connect = reconnect
+    asyncio.run(sp.say("Row 10 reads 4.99 V. What does that tell you?"))
+    assert fresh.contexts[0].pushed == ["Row 10 reads about 5 volts. ", "What does that tell you? "]
+    assert len(sp.player.written) == 2
+    assert states(sent) == ["speaking", "idle"]
+    assert [m["voice"] for m in of(sent, "health")] == []  # recovered before anyone noticed
+
+
+def test_when_reconnecting_fails_too_it_captions_and_ends_idle_not_stuck_thinking():
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    sp._conn = DeadConn()
+
+    async def still_dead():
+        if sp._conn is None:
+            sp._conn = DeadConn()
+        return sp._conn
+
+    sp.connect = still_dead
+    asyncio.run(sp.say("I can hear you. Where are you in the build?"))
+    assert [m["text"] for m in of(sent, "transcript") if m["final"]] == ["I can hear you. Where are you in the build?"]
+    assert states(sent) == ["speaking", "idle"]
+    assert [m["voice"] for m in of(sent, "health")] == ["down"]
+    assert sp.player.written == []
+
+
+def test_keep_fresh_reopens_an_idle_websocket(monkeypatch):
+    import bench.voice_out as vo
+
+    monkeypatch.setattr(vo, "TTS_REFRESH_S", 0.0)
+    monkeypatch.setattr(vo, "TTS_REFRESH_POLL_S", 0.01)
+    agent, _, sent = make()
+    sp = Speaker(agent.bench.session, FakePlayer(), voice_id="v1")
+    old = FakeConn()
+    old.closed = False
+
+    async def close():
+        old.closed = True
+
+    old.close = close
+    sp._conn = old
+    opened = []
+
+    async def connect():
+        if sp._conn is None:
+            sp._conn = FakeConn()
+            opened.append(sp._conn)
+        return sp._conn
+
+    sp.connect = connect
+
+    async def go():
+        t = asyncio.create_task(sp.keep_fresh())
+        await asyncio.sleep(0.05)
+        t.cancel()
+
+    asyncio.run(go())
+    assert old.closed and opened and sp._conn is opened[-1]
+
+
+def test_a_speaker_whose_device_dropped_does_not_hang_in_speaking():
+    """The earbuds disconnected mid-line: the queued audio will never play, so don't wait for it."""
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+
+    class DeadPlayer(FakePlayer):
+        def pending(self):
+            return 24_000  # stuck: nothing is draining it
+
+        def alive(self):
+            return False
+
+    sp = Speaker(s, DeadPlayer(), voice_id="v1")
+    sp._conn = FakeConn()
+    asyncio.run(asyncio.wait_for(sp.say("Row 10 reads 4.99 V."), 2))
+    assert states(sent) == ["speaking", "idle"] and sp.player.cleared >= 1
+
+
 def test_does_not_talk_over_a_student_who_is_talking():
     agent, _, sent = make()
     s = agent.bench.session
@@ -217,6 +327,19 @@ def test_slow_turn_gets_a_filler_line_first():
     asyncio.run(agent.turn("what does it read?"))
     assert pushed(sp) == ["Mm, let me check. ", "Row 10 reads 5 volts. "]
     assert states(sent) == ["thinking", "speaking", "idle"]
+
+
+def test_never_a_filler_two_turns_in_a_row():
+    async def slow(kwargs):
+        await asyncio.sleep(0.15)
+        return msg("Row 10 reads 5 V.")
+
+    agent, sp, sent = streaming_agent(slow, slow, slow)
+    agent.filler_s = 0.05
+    for _ in range(3):
+        asyncio.run(agent.turn("what does it read?"))
+    fillers = [p for p in pushed(sp) if p == "Mm, let me check. " or p.endswith("sec. ") or p.endswith("look. ")]
+    assert len(fillers) == 2  # turns 1 and 3, not 2
 
 
 def test_no_filler_for_probe_events_or_quick_turns():

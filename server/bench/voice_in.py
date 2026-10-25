@@ -37,6 +37,7 @@ SAMPLE_RATE = 16_000
 BLOCK = 800              # 50 ms per mic callback
 PREROLL_S = 0.3          # audio kept from before the button went down
 MIN_CLIP_S = 0.3         # a shorter press is a tap: ignore it
+STALE_S = 1.0            # no mic callback for this long: the device is gone (Bluetooth earbuds dropped...)
 STT_MODEL = os.environ.get("BENCH_STT_MODEL", "ink-whisper")
 STT_TIMEOUT_S = 6.0
 CLIP_DIR = os.environ.get("BENCH_CLIP_DIR")  # set to a folder to keep every clip as a WAV (tuning, noise test)
@@ -77,6 +78,7 @@ class Mic:
         self._clip: list[np.ndarray] | None = None
         self._held = 0  # samples recorded since start_clip, not counting the pre-roll
         self._stream = None
+        self._last_block = time.monotonic()
 
     def open(self) -> None:
         import sounddevice as sd
@@ -86,15 +88,36 @@ class Mic:
             device=self.device, callback=self._callback,
         )
         self._stream.start()
+        self._last_block = time.monotonic()
         info = sd.query_devices(self._stream.device)
         log.info("mic: %s", info["name"])
 
     def close(self) -> None:
         if self._stream is not None:
-            self._stream.close()
-            self._stream = None
+            stream, self._stream = self._stream, None
+            stream.close()
+
+    def alive(self) -> bool:
+        """Still delivering audio. A stream whose device disconnected just stops calling back."""
+        return self._stream is not None and time.monotonic() - self._last_block < STALE_S
+
+    def reopen(self) -> None:
+        """Replace a dead stream. If the chosen device is gone for good, fall back to the system default."""
+        try:
+            self.close()
+        except Exception:
+            pass
+        try:
+            self.open()
+        except Exception as e:
+            if self.device is None:
+                raise
+            log.warning("mic %r unavailable (%s); using the system default", self.device, e)
+            self.device = None
+            self.open()
 
     def _callback(self, indata, frames, time_info, status) -> None:  # PortAudio's thread
+        self._last_block = time.monotonic()
         block = indata[:, 0].copy()
         with self._lock:
             if self._clip is None:
@@ -154,10 +177,23 @@ class VoiceIn:
         self.speak = speak
         self.timings: list[float] = []  # seconds from button release to transcript ready
         self._tasks: set[asyncio.Task] = set()
+        self._pressed = 0.0
+
+    async def keep_alive(self) -> None:
+        """Runs for the app's lifetime: if the mic stops delivering audio (its device disconnected), reopen it."""
+        while True:
+            await asyncio.sleep(STALE_S)
+            if not self.mic.alive():
+                log.warning("mic stopped delivering audio (device disconnected?); reopening")
+                try:
+                    await asyncio.to_thread(self.mic.reopen)
+                except Exception as e:
+                    log.error("mic reopen failed: %r", e)
 
     def press(self, barge_in: bool = False) -> None:
         """The button went down and the session is now listening. On barge-in the pre-roll holds ALTA's own
         voice from the speaker, so the clip starts at the press instead."""
+        self._pressed = time.monotonic()
         self.mic.start_clip(preroll=not barge_in)
 
     def release(self) -> None:
@@ -174,6 +210,12 @@ class VoiceIn:
 
     async def _transcribe(self, pcm: np.ndarray | None, held: float, released: float) -> None:
         s = self.session
+        if held == 0 and released - self._pressed >= MIN_CLIP_S:
+            # Held the button, but the mic delivered nothing (it died mid-press): say so, don't go quiet.
+            log.warning("talk button held %.1f s but the mic delivered no audio", released - self._pressed)
+            await s.set_state(State.transcribing)
+            await self.speak(DIDNT_CATCH)
+            return
         if pcm is None or held < MIN_CLIP_S:
             log.info("talk button tap (%.2f s): ignored", held)
             await s.set_state(State.idle)

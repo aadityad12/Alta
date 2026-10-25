@@ -77,6 +77,44 @@ def test_a_tap_is_ignored():
     assert stt.clips == [] and turns == [] and not of(sent, "transcript")
 
 
+def test_a_mic_that_died_mid_press_says_didnt_catch_that_instead_of_going_quiet():
+    """Seen on the real run: Bluetooth earbuds dropped, the mic stream stopped, and every press was a silent 0 s 'tap'."""
+    bench, voice, stt, sent, turns = setup("hi", held=0.0)
+
+    async def go():
+        await bench.handle(Event(ev.PTT, True))
+        voice._pressed -= 2.0  # the student held the button for 2 s
+        await bench.handle(Event(ev.PTT, False))
+        await asyncio.gather(*voice._tasks)
+
+    asyncio.run(go())
+    assert states(sent) == ["listening", "transcribing", "speaking", "idle"]
+    assert [m["text"] for m in of(sent, "transcript")] == [DIDNT_CATCH]
+    assert stt.clips == [] and turns == []
+
+
+def test_mic_alive_follows_its_callbacks_and_reopen_falls_back_to_the_default(monkeypatch):
+    mic = Mic("JBL Endurance Race 2")
+    assert not mic.alive()  # never opened
+    opened = []
+
+    def fake_open():
+        if mic.device is not None:
+            raise RuntimeError("device unavailable")
+        mic._stream = object()
+        mic._last_block = __import__("time").monotonic()
+        opened.append(mic.device)
+
+    monkeypatch.setattr(mic, "open", fake_open)
+    monkeypatch.setattr(mic, "close", lambda: setattr(mic, "_stream", None))
+    mic.reopen()
+    assert opened == [None] and mic.device is None and mic.alive()
+    mic._last_block -= 5  # no callbacks for 5 s: the device is gone
+    assert not mic.alive()
+    mic._callback(np.zeros((BLOCK, 1), dtype=np.int16), BLOCK, None, None)
+    assert mic.alive()
+
+
 def test_empty_transcript_says_didnt_catch_that():
     bench, voice, stt, sent, turns = setup("   ")
     asyncio.run(talk(bench, voice))

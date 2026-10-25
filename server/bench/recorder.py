@@ -74,7 +74,7 @@ class Recorder:
             self.path, n = self.dir / f"{name}.jsonl", 2
             while self.path.exists():  # two students in the same second (quick resets)
                 self.path, n = self.dir / f"{name}-{n}.jsonl", n + 1
-            self._file = self.path.open("a", buffering=1)  # line-buffered: a crash loses nothing
+            self._file = self.path.open("a", buffering=1, encoding="utf-8")  # line-buffered: a crash loses nothing
             self._file.write(json.dumps({"t": 0.0, "kind": "session", "lab": self._lab, "wall": time.time()}) + "\n")
         self._file.write(json.dumps(rec, ensure_ascii=False, default=str) + "\n")
 
