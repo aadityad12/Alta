@@ -7,7 +7,7 @@ export const STYLE_COLOR: Record<OverlayStyle, string> = {
   'probe-B': '#3b82f6',
   'probe-G': '#22c55e',
   'probe-W': '#f8fafc',
-  attention: '#f97316',
+  attention: '#d67039',
   good: '#22c55e',
   bad: '#ef4444',
 }
