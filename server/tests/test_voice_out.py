@@ -62,6 +62,9 @@ class FakePlayer:
     def pending(self):
         return 0
 
+    def alive(self):
+        return True
+
 
 def speaker_for(session, conn=None):
     sp = Speaker(session, FakePlayer(), voice_id="v1", speed=1.1)
@@ -244,6 +247,25 @@ def test_keep_fresh_reopens_an_idle_websocket(monkeypatch):
 
     asyncio.run(go())
     assert old.closed and opened and sp._conn is opened[-1]
+
+
+def test_a_speaker_whose_device_dropped_does_not_hang_in_speaking():
+    """The earbuds disconnected mid-line: the queued audio will never play, so don't wait for it."""
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+
+    class DeadPlayer(FakePlayer):
+        def pending(self):
+            return 24_000  # stuck: nothing is draining it
+
+        def alive(self):
+            return False
+
+    sp = Speaker(s, DeadPlayer(), voice_id="v1")
+    sp._conn = FakeConn()
+    asyncio.run(asyncio.wait_for(sp.say("Row 10 reads 4.99 V."), 2))
+    assert states(sent) == ["speaking", "idle"] and sp.player.cleared >= 1
 
 
 def test_does_not_talk_over_a_student_who_is_talking():
