@@ -72,13 +72,16 @@ export function BookButton({ onClick }: { onClick: () => void }) {
 export function Header({ title, children, padded }: { title?: string; children?: ReactNode; padded?: boolean }) {
   return (
     <header className={`app-header${padded ? ' app-header-wide' : ''}`}>
-      <Wordmark />
-      {title && (
-        <>
-          <span className="header-divider" />
-          <h1 className="t-h3 header-title">{title}</h1>
-        </>
-      )}
+      {/* baseline-aligned: the title sits on the wordmark's bottom edge */}
+      <span className="header-brand">
+        <Wordmark />
+        {title && (
+          <>
+            <span className="header-divider" />
+            <h1 className="t-h3 header-title">{title}</h1>
+          </>
+        )}
+      </span>
       <span className="spacer" />
       {children}
     </header>
