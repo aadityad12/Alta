@@ -165,8 +165,8 @@ def test_highlight_manual_schematic_and_diagnosis_reach_the_ui_and_session():
     agent, fake, sent = make(
         msg(tool("highlight", mode="replace", items=[
                 {"id": "c1", "kind": "component", "ref": "D1", "style": "attention", "pulse": True},
-                {"id": "a1", "kind": "arrow", "from": "6c", "to": "10c"},
-                {"id": "l1", "kind": "label", "at": "13d", "text": "short leg?"}]),
+                {"id": "a1", "kind": "arrow", "from": "5c", "to": "10c"},
+                {"id": "l1", "kind": "label", "at": "15e", "text": "short leg?"}]),
             tool("show_manual_step", step=3),
             tool("highlight_schematic", nets=["n_led_anode"]),
             tool("record_diagnosis", fault_id="led_reversed", confidence=0.7,
@@ -175,7 +175,7 @@ def test_highlight_manual_schematic_and_diagnosis_reach_the_ui_and_session():
     )
     run(agent.turn("still dark"))
     overlay = of(sent, "overlay")[0]
-    assert overlay["mode"] == "replace" and overlay["items"][1] == {"id": "a1", "kind": "arrow", "from": "6c", "to": "10c"}
+    assert overlay["mode"] == "replace" and overlay["items"][1] == {"id": "a1", "kind": "arrow", "from": "5c", "to": "10c"}
     assert of(sent, "manual") == [{"type": "manual", "step": 3}]
     assert of(sent, "schematic") == [{"type": "schematic", "nets": ["n_led_anode"]}]
     s = agent.bench.session
@@ -266,8 +266,8 @@ def test_reset_during_a_turn_drops_the_result():
 def test_typed_text_runs_a_turn_over_the_websocket():
     app = create_app(demo_ui=False, labs_dir=LABS_DIR, pod_port="off")
     app.state.agent._client = FakeClaude(
-        msg(tool("ask_for_probe", probe="Y", at="6c")),
-        msg("Let's start at the top. Put the yellow probe in row 6."),
+        msg(tool("ask_for_probe", probe="Y", at="5c")),
+        msg("Let's start at the top. Put the yellow probe in row 5."),
     )
     with TestClient(app) as c, c.websocket_connect("/ws") as ws:
         inbox = Inbox(ws)
@@ -275,10 +275,10 @@ def test_typed_text_runs_a_turn_over_the_websocket():
         assert inbox.wait_for(lambda m: m["type"] == "transcript")["role"] == "student"
         inbox.state("thinking")
         e = inbox.wait_for(lambda m: m["type"] == "expect")
-        assert (e["probe"], e["at"], e["label"]) == ("Y", "6c", "5 V")
+        assert (e["probe"], e["at"], e["label"]) == ("Y", "5c", "5 V")
         inbox.state("speaking")
         t = inbox.wait_for(lambda m: m["type"] == "transcript")
-        assert (t["role"], t["text"]) == ("bench", "Let's start at the top. Put the yellow probe in row 6.")
+        assert (t["role"], t["text"]) == ("bench", "Let's start at the top. Put the yellow probe in row 5.")
         inbox.state("idle")
 
 
@@ -355,5 +355,5 @@ def test_prewarm_sends_the_cached_prefix_with_max_tokens_zero():
 
 
 def test_text_from_an_earlier_round_is_used_if_the_last_round_has_none():
-    agent, _, _ = make(msg("Put the yellow probe in row 6.", tool("ask_for_probe", probe="Y", at="6c")), msg())
-    assert run(agent.turn("hi")) == "Put the yellow probe in row 6."
+    agent, _, _ = make(msg("Put the yellow probe in row 5.", tool("ask_for_probe", probe="Y", at="5c")), msg())
+    assert run(agent.turn("hi")) == "Put the yellow probe in row 5."

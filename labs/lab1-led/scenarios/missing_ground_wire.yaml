@@ -1,7 +1,7 @@
-# W2 pulled: open loop. Row 10 reads 5 V; row 13 floats, so its reading is high and jumpy.
+# W2 pulled: open loop. Row 10 reads 5 V; row 15 floats, so its reading is high and jumpy.
 # Format: labs/README.md
 lab: lab1-led
 fault: missing_ground_wire
 nets:
   n_led_cathode: {noise_mv: 1500}   # measured 1553–4979 mV
-probes: {Y: "10c", B: "13c"}
+probes: {Y: "10c", B: "15c"}

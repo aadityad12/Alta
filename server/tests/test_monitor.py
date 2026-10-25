@@ -165,11 +165,11 @@ def test_moving_between_holes_at_the_same_voltage_still_answers_the_request():
     rig = Rig()
     rig.do("Y rail:a+")
     rig.run(1.0)
-    rig.ask(at="6c", net="n_5v")  # the probe already reads 5 V, so only the move tells us
+    rig.ask(at="5c", net="n_5v")  # the probe already reads 5 V, so only the move tells us
     assert rig.run(1.0) == []  # ALTA says where to put it
     rig.do("unplug Y")
     rig.run(0.4)
-    rig.do("Y 6c")
+    rig.do("Y 5c")
     got = rig.run(1.5)
     assert len(got) == 1 and "in the expected range" in got[0]
 
@@ -217,13 +217,13 @@ def test_a_new_request_starts_over():
     rig.ask()
     rig.do("Y 10c")
     rig.run(1.0)
-    rig.ask(at="13c", net="n_led_cathode")
+    rig.ask(at="15c", net="n_led_cathode")
     rig.run(1.0)
     rig.do("unplug Y")
     rig.run(0.4)
-    rig.do("Y 13c")
+    rig.do("Y 15c")
     got = rig.run(1.5)
-    assert len(got) == 1 and got[0].startswith("Yellow probe (asked for 13c, LED cathode) now reads a steady")
+    assert len(got) == 1 and got[0].startswith("Yellow probe (asked for 15c, LED cathode) now reads a steady")
 
 
 def test_lab2_covering_the_sensor_is_reported():
@@ -253,9 +253,9 @@ def test_events_wait_while_anyone_is_talking():
 def test_two_probes_go_out_as_one_message():
     rig = Rig(scenario="led_reversed")
     rig.ask(probe="Y")
-    rig.ask(probe="B", at="13c", net="n_led_cathode")
+    rig.ask(probe="B", at="15c", net="n_led_cathode")
     rig.state(State.speaking)
-    rig.do("Y 10c", "B 13c")
+    rig.do("Y 10c", "B 15c")
     rig.run(1.5)
     rig.state(State.idle)
     got = rig.run(TICK)

@@ -22,7 +22,7 @@ Both can be open at once. In `/brain`, leave **"Answer ALTA's camera requests wi
   SPEAKER_DEVICE=             # empty = default speaker
   ```
 - [ ] Pod firmware flashed and checked by Engineer A (`cd firmware && make flash`, then `uv run bringup.py`). **Close `bringup.py` and any serial monitor before starting the server.** The port can only be open once.
-- [ ] Lab 1 built correctly (manual `labs/lab1-led/manual.md`): red wire 5 V rail → 6a, 220 Ω resistor 6c–10c, LED anode (long leg) 10d / cathode 13d, black wire 13a → ground rail. The LED lights.
+- [ ] Lab 1 built correctly (manual `labs/lab1-led/manual.md`): red wire 5 V rail → 5a, 220 Ω resistor 5c–10c, LED anode (long leg) 10e / cathode 15e, black wire 15a → ground rail. The LED lights.
 - [ ] Pod's red/black leads on the board's 5 V and ground rails. Probes free (not plugged in).
 - [ ] Phone on the stand, looking straight down, and showing as a camera on the laptop (Continuity Camera).
 
@@ -47,7 +47,7 @@ Paste into #16: the replug time and "LED + button OK", or what went wrong.
 
 ## 3. #21 · ALTA reacts to probes by itself (~10 min)
 
-Stage the fault: **flip the LED** (long leg into 13d, short leg into 10d). The LED goes dark.
+Stage the fault: **flip the LED** (long leg into 15e, short leg into 10e). The LED goes dark.
 
 - [ ] Hold the pod button: "My LED won't light." ALTA asks for a probe (usually yellow, row 10).
 - [ ] Plug that probe in **without pressing anything**. ALTA responds **within ~2 s** of the probe settling. The `/brain` feed shows **probe monitor**, then **Claude is given a probe event**, then **ALTA says**. It mentions about 5 volts and asks a guiding question.
