@@ -51,7 +51,7 @@ Stage the fault: **flip the LED** (long leg into 13d, short leg into 10d). The L
 
 - [ ] Hold the pod button: "My LED won't light." ALTA asks for a probe (usually yellow, row 10).
 - [ ] Plug that probe in **without pressing anything**. ALTA responds **within ~2 s** of the probe settling. The `/brain` feed shows **probe monitor**, then **Claude is given a probe event**, then **ALTA says**. It mentions about 5 volts and asks a guiding question.
-- [ ] Leave the probe in. Flip the LED back. ALTA **confirms on its own** ("about 1.9 volts"), with no button press.
+- [ ] Leave the probe in. Flip the LED back. ALTA **confirms on its own** ("about 2 volts"), with no button press.
 - [ ] Do it **5 times**. ALTA never responds twice to one plug-in or one fix. Wiggling the probe in the same hole doesn't trigger anything.
 
 Paste into #21: probe-settled → reply time (from the `/brain` feed), the auto-confirm result, and double reactions out of 5.
@@ -73,7 +73,7 @@ Start each run from a clean state: in `/brain`, press **New student** (reset). F
 1. [ ] Hold the pod button: "My LED won't light." The transcript appears. **Start the timer at the button press.**
 2. [ ] ALTA asks for the **yellow probe at row 10**: row 10 glows yellow on the live feed (`/dev/board`), the gauge shows the expected band, and the schematic highlights the LED anode.
 3. [ ] Plug in the probe: ALTA reacts **without** a button press, mentions about 5 V, and asks a guiding question.
-4. [ ] Flip the LED: ALTA **confirms on its own** ("about 1.9 volts"). **Stop the timer.**
+4. [ ] Flip the LED: ALTA **confirms on its own** ("about 2 volts"). **Stop the timer.**
 5. [ ] Time: ____ s
 
 The schematic highlight in step 2 needs Designer 1's screen (#29). Until it exists, check that the `/brain` feed shows `highlight_schematic` with `n_led_anode`.

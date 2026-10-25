@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144.0mm" height="111.0mm"
+        viewBox="0 0 144.0 111.0">
+      <rect width="100%" height="100%" fill="white"/>
+      <g fill="none" stroke="black" stroke-width=".3">
+        <rect x=".2" y=".2" width="143.6" height="85.6"/>
+        <rect x="88.0" y="23.0" width="48.0" height="38.0"/>
+        <rect x="6.0" y="19.0" width="68.6" height="53.4"/>
+        <path d="M5 101.0h100m-100 -2v4m100 -4v4"/>
+      </g>
+      <g font-family="sans-serif" font-size="3" fill="black">
+        <text x="91.0" y="29.0">Breadboard 48 × 38 mm</text>
+        <text x="9.0" y="27.0">Uno R3 68.6 × 53.4 mm</text>
+        <text x="9.0" y="33.0">USB / barrel jack toward LEFT</text>
+        <text x="5" y="94.0">REFERENCE ONLY · Print at 100%, never “fit to page”.</text>
+        <text x="5" y="108.0">This scale bar must measure exactly 100 mm.</text>
+      </g>
+    </svg>

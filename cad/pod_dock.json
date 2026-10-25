@@ -1,0 +1,72 @@
+{
+  "status": "RULER-PHOTO-SIZED \u2014 conservative envelope; physical fit untested; tape mount",
+  "profile": "mini-170",
+  "units": "mm",
+  "breadboard_lwh": [
+    48.0,
+    38.0,
+    11.0
+  ],
+  "breadboard_dimensions_are_measured": false,
+  "dimension_basis": "User ruler photos: approximately 47\u201348 \u00d7 37 \u00d7 10 mm; rounded-up design envelope",
+  "dimensions_are_design_envelope": true,
+  "breadboard_source_range_lwh": [
+    [
+      45.0,
+      47.0
+    ],
+    [
+      35.0,
+      35.6
+    ],
+    [
+      8.5,
+      10.0
+    ]
+  ],
+  "breadboard_mount_xywh": [
+    84.0,
+    20.0,
+    56.0,
+    44.0
+  ],
+  "breadboard_clear_mount_lw": [
+    54.8,
+    42.8
+  ],
+  "breadboard_origin_xy": [
+    88.0,
+    23.0
+  ],
+  "uno_lw_assumed": [
+    68.6,
+    53.4
+  ],
+  "uno_origin_xy": [
+    6.0,
+    19.0
+  ],
+  "uno_underside_clearance_between_runners": 5.0,
+  "retention": "foam tape on Uno runners; removable mounting tape under mini breadboard",
+  "outer_lwh": [
+    144.0,
+    86.0,
+    8.4
+  ],
+  "base_thickness": 2.4,
+  "rear_wall_above_base": 6.0,
+  "solid_volume_cm3": 36.04,
+  "watertight": true,
+  "positive_volume": true,
+  "connected_bodies": 1,
+  "unsupported_downward_faces_above_base": 0,
+  "triangles": 1262,
+  "slicer_time": "NOT YET MEASURED; must be <= 2.5 hours in Bambu Studio",
+  "sources": [
+    "https://www.makerfabs.com/mini-bread-board-4-5x3-5cm.html",
+    "https://www.sparkfun.com/breadboard-mini-modular-white.html",
+    "https://busboard.com/BB170",
+    "https://store.arduino.cc/products/arduino-uno-rev3"
+  ],
+  "stl": "pod_dock.stl"
+}
