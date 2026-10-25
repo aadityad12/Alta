@@ -1,13 +1,12 @@
 /* Screen layouts. Responsive: at 1440 × 900 they match the Figma frames exactly; smaller windows
    reflow (the camera stays 4:3 and takes what the height allows); narrow or short screens stack
-   and scroll, with the chat dock stuck to the bottom. */
+   and scroll. */
 
 .app { min-height: 100dvh; background: var(--paper); }
 
 .screen {
   --pad: clamp(16px, 2.23vw, 32px); /* 32 at 1440 */
   --gap: clamp(16px, 2.23vw, 32px);
-  --dock-h: clamp(147px, 18.2vh, 164px); /* 164 at 900 */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -142,10 +141,14 @@
 .bench .banner,
 .bench .reading { border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
 .bench .pill { border-radius: 0; }
-.bench .btn { border-radius: 0; }
+.bench .btn,
+.confirm .btn { border-radius: 0; }
 .bench .btn-secondary,
-.bench .btn-secondary:hover { border: 2px solid var(--ink); box-shadow: none; }
-.bench .btn-secondary:hover { filter: brightness(0.95); }
+.bench .btn-secondary:hover,
+.confirm .btn-secondary,
+.confirm .btn-secondary:hover { border: 2px solid var(--ink); box-shadow: none; }
+.bench .btn-secondary:hover,
+.confirm .btn-secondary:hover { filter: brightness(0.95); }
 
 /* the guide below: schematic (or the setup question) on the left, the step on the right */
 .bench .guide-col { flex: none; }
@@ -261,10 +264,9 @@
   overflow-y: auto;
   text-align: center;
 }
-.finished-circuit { display: flex; width: min(560px, 100%); flex: none; padding: clamp(16px, 3.12vh, 28px) clamp(20px, 2.78vw, 40px); border-radius: 28px; background: var(--ink-10); }
+.finished-circuit { display: flex; width: min(560px, 100%); flex: none; padding: clamp(16px, 3.12vh, 28px) clamp(20px, 2.78vw, 40px); border: 2px solid var(--ink); background: var(--ink-10); }
 .good-luck-lead { width: min(620px, 100%); }
 .good-luck-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 6px; }
-.new-student { position: absolute; right: var(--pad); bottom: calc(var(--dock-h) + 16px); }
 
 /* ---------- veil + cards (C4 reconnecting, confirm, shortcuts) ---------- */
 .veil {
@@ -296,7 +298,8 @@
 .spin { animation: spin 1.4s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .code-chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; background: var(--ink); color: var(--paper); }
-.confirm { width: 520px; gap: 16px; }
+/* the new-student confirm: square and ink-bordered, like the bench */
+.confirm { width: 520px; gap: 16px; border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
 .confirm-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 8px; }
 .shortcuts { width: 520px; align-items: stretch; gap: 12px; text-align: left; }
 .shortcut { display: flex; align-items: center; gap: 16px; }
@@ -407,7 +410,7 @@
   .guide-step .gap-8 { display: none; }
 }
 
-/* ---------- narrow or short screens: stack and scroll, dock stuck to the bottom ---------- */
+/* ---------- narrow or short screens: stack and scroll ---------- */
 @media (max-width: 899px), (max-height: 599px) {
   .bench,
   .calibrate,
@@ -428,8 +431,6 @@
   .guide-vis { flex: none; height: clamp(180px, 40vw, 240px); }
   .setup-q { flex: none; overflow: visible; }
   .good-luck-body { flex: 1 0 auto; overflow: visible; padding: 16px 0; }
-  .new-student { position: static; align-self: center; }
-  .screen > .dock { position: sticky; bottom: 0; z-index: 5; margin-top: auto; }
 }
 
 /* ---------- phones ---------- */

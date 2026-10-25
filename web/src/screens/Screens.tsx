@@ -1,13 +1,12 @@
 // The smaller screens: A1 Pick a lab, B12 Guide complete · good luck, C4 Reconnecting, C7 ALTA can't
 // help, plus the new-student confirm and the shortcut cheat-sheet (#31).
 
-import type { ComponentProps, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { labTitle, type LabCard } from '../app/labs'
 import bookPaper from '../assets/figma/book-paper.svg'
 import refresh40 from '../assets/figma/refresh-40.svg'
 import terminal from '../assets/figma/terminal.svg'
 import userOrange from '../assets/figma/user-round-orange.svg'
-import { ChatDock } from '../ui/Chat'
 import { Button, FitSchematic, Header } from '../ui/kit'
 import './screens.css'
 
@@ -51,13 +50,12 @@ type DoneProps = {
   title: string
   labId: string
   headerRight: ReactNode
-  dock: ComponentProps<typeof ChatDock>
   onManual: () => void
   onLabs: () => void
   onNewStudent: () => void
 }
 
-export function GoodLuck({ title, labId, headerRight, dock, onManual, onLabs, onNewStudent }: DoneProps) {
+export function GoodLuck({ title, labId, headerRight, onManual, onLabs, onNewStudent }: DoneProps) {
   return (
     <div className="screen bench good-luck">
       <Header title={title}>{headerRight}</Header>
@@ -77,14 +75,11 @@ export function GoodLuck({ title, labId, headerRight, dock, onManual, onLabs, on
           <Button big kind="secondary" onClick={onLabs}>
             Back to labs
           </Button>
+          <Button big kind="secondary" onClick={onNewStudent} title="New student (N)">
+            New student
+          </Button>
         </div>
       </div>
-      <div className="new-student">
-        <Button kind="ghost" onClick={onNewStudent} title="New student (N)">
-          New student
-        </Button>
-      </div>
-      <ChatDock {...dock} />
     </div>
   )
 }

@@ -13,7 +13,7 @@ import { Calibrate } from './screens/Calibrate'
 import { Intro } from './screens/Intro'
 import { ManualPage } from './screens/Manual'
 import { CantHelp, ConfirmNewStudent, GoodLuck, Picker, Reconnecting, Shortcuts } from './screens/Screens'
-import { ChatSheet, type DockState } from './ui/Chat'
+import type { DockState } from './ui/Chat'
 import { Banner, BookButton, Reading, StatusChip, type ChipStatus, type NavState, type ProbeAsk, type ReadingTone } from './ui/kit'
 import './theme.css'
 
@@ -45,7 +45,6 @@ export default function App() {
   const [uiStep, setUiStep] = useState(0) // 0 = setup, 1…n = manual steps
   const [confirmed, setConfirmed] = useState(0) // highest step ALTA has confirmed
   const [manual, setManual] = useState<{ focus?: string } | null>(null) // the open manual pop-up, at this section id
-  const [chatOpen, setChatOpen] = useState(false)
   const [confirmNew, setConfirmNew] = useState(false)
   const [help, setHelp] = useState(false)
   const [draft, setDraft] = useState('')
@@ -150,7 +149,7 @@ export default function App() {
       <Banner icon="refresh" title="Board not calibrated" body="Click the 4 corner holes once so ALTA can point at holes on the camera." action="Calibrate" onAction={() => setScreen('calibrate')} />
     ) : null)
 
-  // ---------- chat dock ----------
+  // ---------- chat input (the transcript beside the camera) ----------
   const voiceDown = bench.health?.voice === 'down'
   const aiDown = bench.health?.ai === 'down'
   const dockState: DockState =
@@ -165,27 +164,6 @@ export default function App() {
             : bench.state === 'speaking'
               ? 'speaking'
               : 'idle'
-
-  // The caption is only ever a line from the server; with none yet, a muted how-to hint.
-  let tag = 'ALTA'
-  let tagTone: 'blue' | 'muted' | 'orange' = 'blue'
-  let caption = ''
-  let italic = false
-  if (aiDown && bench.health?.fix.ai) {
-    tag = 'NOTE'
-    tagTone = 'orange'
-    caption = bench.health.fix.ai
-  } else if (lastLine) {
-    caption = lastLine.text
-    italic = !lastLine.final
-    if (lastLine.role === 'student') [tag, tagTone] = ['You', 'muted']
-    if (lastLine.role === 'system') [tag, tagTone] = ['NOTE', 'muted']
-  }
-  if (dockState === 'listening' && !(lastLine?.role === 'student' && !lastLine.final)) {
-    ;[tag, tagTone, caption, italic] = ['You', 'muted', 'Listening…', true]
-  }
-  const hint = !caption
-  if (hint) [tag, caption] = ['', 'Hold the mic (or Space) to talk to ALTA, or press / to type.']
 
   const talk = useCallback(
     (down: boolean) => {
@@ -212,7 +190,6 @@ export default function App() {
     onTalk: talk,
     onFocusChange: setTyping,
   }
-  const dock = { ...inputProps, tag, tagTone, caption, italic, muted: hint, onPullUp: () => setChatOpen(true) }
 
   // ---------- flow ----------
   const startLab = (id: string) => {
@@ -244,7 +221,6 @@ export default function App() {
     resetLocal()
     setConfirmNew(false)
     setManual(null)
-    setChatOpen(false)
     setDraft('')
     setUiStep(0)
     setConfirmed(0)
@@ -263,17 +239,17 @@ export default function App() {
       const inField = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement
       if (e.key === 'Escape') {
         setManual(null)
-        setChatOpen(false)
         setConfirmNew(false)
         setHelp(false)
         return
       }
       if (inField || e.metaKey || e.ctrlKey || e.altKey || k.screen === 'intro') return
       const atBench = k.screen === 'bench' || k.screen === 'done'
-      if (e.code === 'Space' && atBench && !k.manual) {
+      // talk and type only where the transcript is (the good-luck screen has no chat)
+      if (e.code === 'Space' && k.screen === 'bench' && !k.manual) {
         e.preventDefault()
         if (!e.repeat && !k.talking) k.talk(true)
-      } else if (e.key === '/' && atBench) {
+      } else if (e.key === '/' && k.screen === 'bench') {
         e.preventDefault()
         setManual(null)
         inputRef.current?.focus()
@@ -328,7 +304,6 @@ export default function App() {
         title={title}
         labId={lab.id}
         headerRight={headerRight}
-        dock={dock}
         onManual={() => openManual('measurements-and-observations')}
         onLabs={() => setScreen('picker')}
         onNewStudent={() => setConfirmNew(true)}
@@ -355,7 +330,6 @@ export default function App() {
     <div className="app">
       {page}
       {manual && lab?.manual_md && <ManualPage title={title} md={lab.manual_md} focus={manual.focus} onClose={() => setManual(null)} />}
-      {chatOpen && <ChatSheet lines={bench.lines} onClose={() => setChatOpen(false)} {...inputProps} />}
       {screen !== 'intro' && serverDown && !(bench.downSince && now - bench.downSince > CANT_HELP_AFTER_MS) && <Reconnecting onRetry={retryNow} />}
       {confirmNew && <ConfirmNewStudent onCancel={() => setConfirmNew(false)} onConfirm={newStudent} />}
       {help && <Shortcuts onClose={() => setHelp(false)} />}
