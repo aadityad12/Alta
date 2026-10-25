@@ -130,6 +130,34 @@ def test_no_tts_still_captions_and_moves_state():
     assert states(sent) == ["speaking", "idle"] and sp.player.written == []
 
 
+def test_tts_failure_puts_voice_down_until_it_speaks_again():
+    agent, _, sent = make()
+    s = agent.bench.session
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    conn = FakeConn()
+    tries = []
+
+    async def flaky():
+        tries.append(1)
+        if len(tries) == 1:
+            raise ConnectionError("offline")
+        return conn
+
+    sp.connect = flaky
+
+    async def go():
+        s.state = State.thinking
+        await sp.say("First try.")  # Cartesia down: captions only, banner up
+        s.state = State.thinking
+        await sp.say("Second try.")  # back: audio again, banner down
+
+    asyncio.run(go())
+    assert [m["voice"] for m in of(sent, "health")] == ["down", "ok"]
+    assert "voice" in of(sent, "health")[0]["fix"]
+    assert [m["text"] for m in of(sent, "transcript") if m["final"]] == ["First try.", "Second try."]
+    assert conn.contexts[0].pushed == ["Second try. "] and len(sp.player.written) == 1
+
+
 def test_does_not_talk_over_a_student_who_is_talking():
     agent, _, sent = make()
     s = agent.bench.session
