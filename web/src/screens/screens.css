@@ -1,0 +1,445 @@
+/* Screen layouts. Responsive: at 1440 × 900 they match the Figma frames exactly; smaller windows
+   reflow (the camera stays 4:3 and takes what the height allows); narrow or short screens stack
+   and scroll, with the chat dock stuck to the bottom. */
+
+.app { min-height: 100dvh; background: var(--paper); }
+
+.screen {
+  --pad: clamp(16px, 2.23vw, 32px); /* 32 at 1440 */
+  --gap: clamp(16px, 2.23vw, 32px);
+  --dock-h: clamp(147px, 18.2vh, 164px); /* 164 at 900 */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.67vh, 24px);
+  min-height: 100dvh;
+  padding: clamp(14px, 2.67vh, 24px) var(--pad) 0;
+  background: var(--paper);
+}
+.screen-wide {
+  --pad: clamp(16px, 2.78vw, 40px); /* 40 at 1440 */
+  gap: clamp(16px, 3.12vh, 28px);
+  padding: clamp(16px, 3.12vh, 28px) var(--pad) clamp(16px, 4.45vh, 40px);
+}
+.gap-6 { display: block; height: 6px; flex: none; }
+.gap-8 { display: block; height: 8px; flex: none; }
+.pt-8 { padding-top: 8px; }
+
+.col-label { display: flex; align-items: center; gap: 10px; height: 28px; flex: none; }
+.guide-col .col-label { gap: 6px; }
+
+/* ---------- intro: drawn on the 1440 × 900 frame, scaled to fit ---------- */
+.intro { position: fixed; inset: 0; z-index: 50; overflow: hidden; background: var(--paper); cursor: pointer; }
+.intro-stage { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; transform-origin: 0 0; }
+.intro-mark { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform: translate(576.6px, 230.2px); }
+.intro-lta {
+  position: absolute;
+  left: 591.85px;
+  top: 308px;
+  font: 500 218.5px/normal var(--mono);
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- A1 pick a lab ---------- */
+.picker-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 5.3vh, 48px);
+  flex: 1 0 auto;
+  padding-bottom: clamp(0px, 3.1vh, 28px);
+}
+.lab-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 560px));
+  justify-content: center;
+  gap: clamp(16px, 2.78vw, 40px);
+  width: 100%;
+}
+.lab-card {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(400px, 55.6vh, 500px);
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+.lab-card-art { position: relative; height: 190px; flex: none; border-bottom: 2px solid var(--ink); background: var(--ink-10); }
+.lab-card-art .schematic-fill { inset: 16px 24px; }
+.lab-card-details { display: flex; flex-direction: column; gap: 14px; flex: 1 0 auto; padding: 28px clamp(20px, 2.23vw, 32px) 32px; }
+.part-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.part-chip { padding: 4px 10px; border: 2px solid var(--ink-20); }
+.picker .btn { border-radius: 0; }
+
+/* ---------- schematic sizing ---------- */
+.schematic-fit { display: flex; align-items: center; justify-content: center; width: 100%; }
+.schematic-fill { position: absolute; inset: 28px 32px; width: auto; }
+
+/* ---------- camera (4:3; its column sets the width) ---------- */
+.camera {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  flex: none;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--ink);
+  box-shadow: var(--shadow-raised);
+  container-type: inline-size;
+}
+.camera-missing { background: rgb(34 34 34 / 0.24); }
+.camera-media { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.camera-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  text-align: center;
+}
+.cam-col { position: relative; display: flex; flex-direction: column; gap: 12px; flex: none; min-width: 0; }
+.cam-banner { position: absolute; left: clamp(10px, 3.125cqw, 24px); right: clamp(10px, 3.125cqw, 24px); top: clamp(10px, 3.125cqw, 24px); }
+.cam-reading { position: absolute; right: clamp(10px, 3.125cqw, 24px); bottom: clamp(10px, 3.125cqw, 24px); transform-origin: bottom right; }
+@container (max-width: 560px) {
+  .cam-reading { transform: scale(0.82); }
+  .cam-banner .banner { gap: 10px; padding: 8px 8px 8px 12px; }
+  .cam-banner .banner-body { font-size: 14px; line-height: 20px; }
+  .cam-banner .btn { height: 40px; padding: 0 14px; }
+}
+
+/* ---------- A3 calibrate: one screen on desktop ---------- */
+.calibrate { height: 100dvh; overflow: hidden; }
+
+.bench-body,
+.calibrate-body { display: flex; gap: var(--gap); flex: 1 0 0; min-height: 0; container-type: size; }
+
+/* camera as big as the height allows (the label + gap above it take 40px), leaving the side column room */
+.calibrate .cam-col { width: min(calc(100cqw - var(--gap) - clamp(320px, 27.8vw, 400px)), calc((100cqh - 40px) * 4 / 3)); }
+
+/* ---------- B at the bench: camera + probe readings under it, transcript beside both, fill the first screen; scroll for the guide ---------- */
+/* square, ink-bordered shapes on a dotted page (colours and type sizes stay the Figma ones) */
+.bench {
+  --row: clamp(14px, 2.67vh, 24px);
+  padding-bottom: var(--pad);
+}
+.bench,
+.picker {
+  background-image: radial-gradient(var(--ink-20) 1px, transparent 1.5px);
+  background-size: 16px 16px;
+}
+/* the screen's top padding, the 48px header, the gap under it and a bottom margin take the rest */
+.bench .bench-body { flex: none; height: calc(100dvh - 48px - 3 * var(--row)); }
+/* the camera column takes what the transcript leaves; the camera fills it above the probe row (video shown whole: contain) */
+.bench .cam-col { width: calc(100cqw - var(--gap) - clamp(340px, 28vw, 440px)); }
+.chat-col { display: flex; flex-direction: column; gap: 12px; flex: 1 0 0; min-width: 0; }
+.bench .camera { aspect-ratio: auto; flex: 1 0 0; min-height: 0; border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .banner,
+.bench .reading { border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .pill { border-radius: 0; }
+.bench .btn { border-radius: 0; }
+.bench .btn-secondary,
+.bench .btn-secondary:hover { border: 2px solid var(--ink); box-shadow: none; }
+.bench .btn-secondary:hover { filter: brightness(0.95); }
+
+/* the guide below: schematic (or the setup question) on the left, the step on the right */
+.bench .guide-col { flex: none; }
+.bench .guide-card { flex: none; flex-direction: row; min-height: clamp(320px, 42vh, 400px); border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .guide-step { width: clamp(360px, 32vw, 480px); justify-content: center; border-left: 2px solid var(--ink); }
+.bench .setup-check .box { border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .setup-check input:checked + .box { border-color: var(--blue); }
+
+.guide-col { display: flex; flex-direction: column; gap: 12px; flex: 1 0 0; min-width: 0; }
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: var(--shadow-raised);
+}
+.guide-vis { position: relative; flex: 1 0 0; min-height: 0; background: var(--ink-10); }
+.guide-step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+  padding: clamp(18px, 2.67vh, 24px) clamp(20px, 2.23vw, 32px) clamp(20px, 3.12vh, 28px);
+}
+
+/* the setup question scrolls inside its area when the window is short, so Back/Done stay visible */
+.setup-q {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  gap: 16px;
+  flex: 1 0 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(20px, 3.12vh, 28px) clamp(20px, 2.23vw, 32px);
+  background: var(--blue-10);
+}
+.setup-check { position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.setup-check input { position: absolute; opacity: 0; width: 20px; height: 20px; margin: 0; cursor: pointer; }
+.setup-check .box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: var(--shadow-soft);
+}
+.setup-check input:checked + .box { background: var(--blue); }
+.setup-check input:checked + .box::after {
+  content: '';
+  width: 10px;
+  height: 5px;
+  margin-top: -2px;
+  border: 2px solid var(--paper);
+  border-top: 0;
+  border-right: 0;
+  transform: rotate(-45deg);
+}
+.setup-check input:focus-visible + .box { outline: 3px solid rgb(83 139 235 / 0.45); outline-offset: 2px; }
+
+/* ---------- A3 calibrate ---------- */
+.cal-svg { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.cal-handle { cursor: grab; }
+.cal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.2vh, 20px);
+  flex: 1 0 0;
+  min-width: 0;
+  overflow-y: auto;
+  padding: clamp(20px, 3.5vh, 32px) clamp(20px, 2.23vw, 32px);
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: var(--shadow-raised);
+}
+.cal-now { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px 18px; border-radius: 18px; background: var(--blue-10); }
+.cal-row { display: flex; align-items: center; gap: 12px; }
+.cal-dot { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: none; border-radius: 999px; background: var(--ink-10); }
+.cal-row-done .cal-dot { background: var(--blue); }
+.cal-row-now .cal-dot { background: var(--blue-10); }
+.cal-row-next { color: var(--ink-40); }
+.cal-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cal-field input,
+.cal-field select {
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ink-10);
+  color: var(--ink);
+  font: 400 16px/24px var(--sans);
+}
+.cal-field input { width: 80px; }
+.cal-field select { min-width: 0; max-width: 220px; }
+.cal-actions { display: flex; justify-content: space-between; gap: 12px; }
+
+/* ---------- B12 good luck ---------- */
+.good-luck { height: 100dvh; overflow: hidden; }
+.good-luck-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(14px, 2.45vh, 22px);
+  flex: 1 0 0;
+  min-height: 0;
+  overflow-y: auto;
+  text-align: center;
+}
+.finished-circuit { display: flex; width: min(560px, 100%); flex: none; padding: clamp(16px, 3.12vh, 28px) clamp(20px, 2.78vw, 40px); border-radius: 28px; background: var(--ink-10); }
+.good-luck-lead { width: min(620px, 100%); }
+.good-luck-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 6px; }
+.new-student { position: absolute; right: var(--pad); bottom: calc(var(--dock-h) + 16px); }
+
+/* ---------- veil + cards (C4 reconnecting, confirm, shortcuts) ---------- */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(255 255 254 / 0.62);
+  animation: fade-in 0.2s ease-out;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: clamp(24px, 4vh, 36px) clamp(20px, 2.78vw, 40px);
+  border-radius: 28px;
+  background: var(--paper);
+  box-shadow: var(--shadow-raised);
+  text-align: center;
+}
+.reconnecting { width: 560px; }
+.spin { animation: spin 1.4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.code-chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; background: var(--ink); color: var(--paper); }
+.confirm { width: 520px; gap: 16px; }
+.confirm-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; padding-top: 8px; }
+.shortcuts { width: 520px; align-items: stretch; gap: 12px; text-align: left; }
+.shortcut { display: flex; align-items: center; gap: 16px; }
+.shortcut kbd {
+  min-width: 64px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ink-10);
+  text-align: center;
+  font-family: var(--sans);
+}
+
+/* ---------- C7 ALTA can't help ---------- */
+.cant-help-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; flex: 1 0 auto; padding-bottom: 80px; text-align: center; }
+.cant-help-icon { display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; flex: none; border-radius: 999px; background: var(--orange-10); }
+
+/* ---------- A2 manual: a pop-up in the middle, the screen behind blurred and a little faded ---------- */
+.manual-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(255 255 254 / 0.35);
+  backdrop-filter: blur(8px);
+  animation: fade-in 0.2s ease-out;
+}
+.manual-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  height: min(800px, 100%);
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  animation: pop-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+}
+.manual-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 100px;
+  flex: none;
+  padding: 22px 28px 22px 36px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+}
+.manual-title { display: flex; flex-direction: column; min-width: 0; }
+.manual-title h1 { overflow-wrap: anywhere; }
+/* the book sits on the title line (bottom-aligned with the text), not centred on the two lines */
+.manual-brand { display: flex; align-items: flex-end; gap: 14px; min-width: 0; }
+.manual-brand > img { flex: none; margin-bottom: 2px; }
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  cursor: pointer;
+}
+.close-btn:hover { background: var(--ink-10); }
+.manual-body { flex: 1 0 0; min-height: 0; overflow-y: auto; scroll-behavior: smooth; }
+.manual-column { display: flex; flex-direction: column; gap: 18px; width: min(880px, 100% - 48px); margin: 0 auto; padding: 40px 0 96px; }
+.manual-column strong { font-weight: 700; }
+.manual-column code { font-family: var(--mono); font-size: 0.95em; }
+.m-h2 { padding-top: 22px; scroll-margin-top: 24px; }
+.m-h3 { padding-top: 8px; }
+.m-check { padding: 14px 18px; border: 2px solid var(--blue); background: var(--blue-10); }
+.m-formula { padding: 14px 20px; border: 2px solid var(--ink-20); background: var(--ink-10); overflow-wrap: anywhere; }
+.m-ol, .m-ul { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.m-ol li { display: flex; align-items: flex-start; gap: 12px; }
+.m-num { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: none; border: 2px solid var(--ink); font: 500 14px/1 var(--mono); }
+.m-ul li { position: relative; padding-left: 24px; }
+.m-ul li::before { content: ''; position: absolute; left: 8px; top: 11px; width: 6px; height: 6px; background: var(--ink-60); }
+.m-table { display: flex; flex-direction: column; overflow-x: auto; border: 2px solid var(--ink); background: var(--paper); }
+.m-tr { display: flex; gap: 16px; padding: 12px 18px; }
+.m-tr + .m-tr { border-top: 1px solid var(--ink-20); }
+.m-th { border-bottom: 1px solid var(--ink); background: var(--ink-10); }
+.m-tr > span { min-width: 1px; }
+.m-path { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 8px; padding: 16px 18px; border: 2px solid var(--ink-20); background: var(--ink-10); }
+.m-path-step { display: inline-flex; align-items: center; gap: 8px; }
+.m-pill { padding: 4px 10px; border: 2px solid var(--ink-20); background: var(--paper); white-space: nowrap; }
+.m-pill-part { border-color: var(--blue); background: var(--blue-10); color: var(--blue); }
+.m-pre { margin: 0; padding: 16px 18px; border: 2px solid var(--ink-20); background: var(--ink-10); font: 400 16px/24px var(--mono); white-space: pre-wrap; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+/* ---------- shorter laptop screens (one-screen layout, < 820px tall): tighter guide card ---------- */
+@media (min-width: 900px) and (min-height: 600px) and (max-height: 819px) {
+  .setup-q { gap: 10px; padding: 16px 24px; }
+  .setup-q > img { display: none; }
+  .setup-q > .t-h2 { font-size: 20px; line-height: 28px; }
+  .setup-check .t-body-l { font-size: 16px; line-height: 24px; }
+  .guide-step { gap: 6px; padding: 16px 24px 18px; }
+  .guide-step .gap-8 { display: none; }
+}
+
+/* ---------- narrow or short screens: stack and scroll, dock stuck to the bottom ---------- */
+@media (max-width: 899px), (max-height: 599px) {
+  .bench,
+  .calibrate,
+  .good-luck { height: auto; overflow: visible; }
+  .bench-body,
+  .calibrate-body { flex-direction: column; flex: none; container-type: normal; }
+  .bench .cam-col,
+  .calibrate .cam-col { width: 100%; }
+  .bench .bench-body { height: auto; }
+  .bench .camera { aspect-ratio: 4 / 3; flex: none; }
+  .chat-col { flex: none; }
+  .chat-panel { flex: none; height: min(480px, 70dvh); }
+  .bench .guide-card { flex-direction: column; min-height: 0; }
+  .bench .guide-step { width: auto; border-left: 0; border-top: 2px solid var(--ink); }
+  .guide-col,
+  .guide-card,
+  .cal-panel { flex: none; }
+  .guide-vis { flex: none; height: clamp(180px, 40vw, 240px); }
+  .setup-q { flex: none; overflow: visible; }
+  .good-luck-body { flex: 1 0 auto; overflow: visible; padding: 16px 0; }
+  .new-student { position: static; align-self: center; }
+  .screen > .dock { position: sticky; bottom: 0; z-index: 5; margin-top: auto; }
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 599px) {
+  .lab-card { min-height: 0; }
+  .lab-card-art { height: 150px; }
+  .manual-layer { padding: 0; }
+  .manual-modal { width: 100%; height: 100%; border-radius: 0; }
+  .manual-head { min-height: 0; padding: 14px 16px; }
+  .manual-column { width: calc(100% - 32px); padding: 24px 0 64px; }
+  .m-tr { min-width: 560px; }
+  .cal-actions .btn { flex: 1 0 auto; }
+}

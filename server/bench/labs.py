@@ -30,6 +30,7 @@ class Lab:
 
 
 def load_lab(lab_dir: Path) -> Lab:
+    # utf-8 explicitly: Windows defaults to cp1252, which turns "Lab 1 · Light an LED" into "Lab 1 Â· …"
     data = yaml.safe_load((lab_dir / "lab.yaml").read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("lab.yaml is not a mapping")
