@@ -76,7 +76,7 @@ def create_app(
         except Exception as e:
             log.warning("tts connect failed (%r); will retry on the first reply", e)
             await bench.session.health.down("voice", f"tts connect: {type(e).__name__}")
-        log.info("voice: %s · %s", sp.voice_id, sp.model)
+        log.info("voice: %s (%s) · %s", sp.voice_name, sp.voice_id, sp.model)
         agent.speak, agent.speak_stream = sp.say, sp.speak
         return sp
 

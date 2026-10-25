@@ -122,7 +122,7 @@ async def run(args) -> int:
                                               agent.keep_warm())]
     fault = next(f for f in lab.data["faults"] if f["id"] == args.fault)
     out(f"{BOLD}ALTA, out loud{RESET} · {lab.data.get('title')} · staged fault: {fault['name']}"
-        f" · model {agent.model}")
+        f" · model {agent.model} · voice {speaker.voice_name}")
     out(f"{DIM}Enter = talk button (press, speak, press again). Board: Y 10c · unplug Y · fix · light 0/1 · "
         f"probes · say <text> · reset · quit{RESET}")
     out(f"{DIM}The student's problem: \"{fault['symptom']}\" Try saying: \"Hi, I built the circuit but {fault['symptom'][0].lower() + fault['symptom'][1:] if not fault['symptom'][1:2].isupper() else fault['symptom']} Can you help?\"{RESET}")
@@ -186,8 +186,11 @@ def main() -> None:
     p.add_argument("--lab", default="lab1-led")
     p.add_argument("--fault", default="led_reversed")
     p.add_argument("--model", default=None, help="default: BENCH_MODEL from .env")
+    p.add_argument("--voice", choices=("man", "woman"), help="ALTA's voice (default: BENCH_VOICE from .env, else man)")
     p.add_argument("-v", "--verbose", action="store_true", help="show server logs too")
     args = p.parse_args()
+    if args.voice:
+        os.environ["BENCH_VOICE"] = args.voice
     logging.getLogger().setLevel(logging.INFO if args.verbose else logging.ERROR)
     for key in ("ANTHROPIC_API_KEY", "CARTESIA_API_KEY"):
         if not os.environ.get(key):
