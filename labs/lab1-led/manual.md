@@ -15,7 +15,7 @@ In this lab you'll build a basic LED circuit on a breadboard: a 5 V supply, a 22
 | D1 | LED | Red | Two legs. The **longer leg** is the anode (+); the shorter leg is the cathode (−). |
 | W2 | Jumper wire | — | Black |
 
-**Equipment:** 830-point breadboard (you'll use rows 5–15) and the ALTA probe pod. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
+**Equipment:** 830-point breadboard (you'll use rows 5–20) and the ALTA probe pod. The pod supplies 5 V through its red and black wires and measures voltage with its colored probes.
 
 A quick breadboard reminder: the five holes in each row-half (a–e or f–j) are connected to each other. The long rails along the edge are connected along their whole length.
 
@@ -53,14 +53,14 @@ The full schematic appears in the schematic panel. The connections are:
 | Ref | From | To |
 |---|---|---|
 | W1 | + rail (5 V) | 5a |
-| R1 | 5c | 10c |
-| D1 | 10e (anode, long leg) | 15e (cathode, short leg) |
-| W2 | 15a | − rail (ground) |
+| R1 | 5c | 15c |
+| D1 | 15e (anode, long leg) | 20e (cathode, short leg) |
+| W2 | 20a | − rail (ground) |
 
 Current path:
 
 ```
-+5 V rail ──W1── row 5 ──R1 (220 Ω)── row 10 ──D1 (anode → cathode)── row 15 ──W2── ground rail
++5 V rail ──W1── row 5 ──R1 (220 Ω)── row 15 ──D1 (anode → cathode)── row 20 ──W2── ground rail
 ```
 
 ## Experimental Procedure
@@ -75,22 +75,22 @@ Before you start, plug the pod's **red** wire into the **+ rail** next to column
 
 ## Step 2 — Add the resistor
 
-1. Insert the 220 Ω resistor **R1** from **5c** to **10c**. A resistor can go in either way round.
+1. Insert the 220 Ω resistor **R1** from **5c** to **15c**. A resistor can go in either way round.
 
 **Check:** Row 5 should still read about **5 V**.
 
 ## Step 3 — Add the LED
 
-1. Insert the LED's **long leg** (anode) into **10e**.
-2. Insert the **short leg** (cathode) into **15e**.
+1. Insert the LED's **long leg** (anode) into **15e**.
+2. Insert the **short leg** (cathode) into **20e**.
 
-**Check:** The LED should stay **off**. That's expected: row 15 isn't connected to ground yet, so the circuit isn't complete and no current can flow.
+**Check:** The LED should stay **off**. That's expected: row 20 isn't connected to ground yet, so the circuit isn't complete and no current can flow.
 
 ## Step 4 — Connect to ground
 
-1. Connect the black jumper wire **W2** from **15a** to the **− rail**.
+1. Connect the black jumper wire **W2** from **20a** to the **− rail**.
 
-**Check:** The LED should light up. Row 10 should read about **2.0 V**, and row 15 about **0 V**.
+**Check:** The LED should light up. Row 15 should read about **2.0 V**, and row 20 about **0 V**.
 
 ## Measurements and Observations
 
@@ -99,16 +99,16 @@ With the LED lit, probe each row and record your readings. The expected values w
 | Probe point | Part of the circuit | Expected (approx.) | Measured |
 |---|---|---|---|
 | Row 5 | Supply (5 V) | 5.0 V | |
-| Row 10 | LED anode | 2.0 V | |
-| Row 15 | LED cathode | 0 V | |
+| Row 15 | LED anode | 2.0 V | |
+| Row 20 | LED cathode | 0 V | |
 
 Use your measured values to answer:
 
-1. What is the voltage across the resistor? (row 5 − row 10) __________
-2. What is the voltage across the LED? (row 10 − row 15) __________
+1. What is the voltage across the resistor? (row 5 − row 15) __________
+2. What is the voltage across the LED? (row 15 − row 20) __________
 3. Add your two answers. Is the total close to the supply voltage (row 5)? __________
 4. Use Ohm's law and your answer to question 1 to estimate the current: I = V_resistor / 220 Ω = __________
-5. In Step 3, the LED was off. What would row 10 read with no current flowing, and why? __________
+5. In Step 3, the LED was off. What would row 15 read with no current flowing, and why? __________
 
 ## What You Learned
 

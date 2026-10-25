@@ -1,4 +1,4 @@
-# 10 kΩ in R1's place: ≈0.3 mA, LED very dim, row 10 ≈ 1.65 V. Format: labs/README.md
+# 10 kΩ in R1's place: ≈0.3 mA, LED very dim, row 15 ≈ 1.65 V. Format: labs/README.md
 lab: lab1-led
 fault: wrong_resistor_10k
-probes: {Y: "10c"}
+probes: {Y: "15c"}

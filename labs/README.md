@@ -28,15 +28,15 @@ Diagram: `docs/visuals/lab-placement-v1.html`. Regenerate it after editing a lab
 
 Power comes from the pod's red/black wires onto the rails next to column **a** (`rail:a+` = 5 V, `rail:a-` = GND).
 
-**Lab 1 · LED** (rows 5–15)
+**Lab 1 · LED** (rows 5–20)
 | ref | part | holes |
 |---|---|---|
 | W1 | red wire | `rail:a+` → `5a` |
-| R1 | 220 Ω (red-red-brown) | `5c` → `10c` |
-| D1 | red LED | anode (long leg) `10e`, cathode `15e` |
-| W2 | black wire | `15a` → `rail:a-` |
+| R1 | 220 Ω (red-red-brown) | `5c` → `15c` |
+| D1 | red LED | anode (long leg) `15e`, cathode `20e` |
+| W2 | black wire | `20a` → `rail:a-` |
 
-Probe points: row 5 = 5 V · row 10 = LED anode ≈ 2.0 V · row 15 = LED cathode ≈ 0 V
+Probe points: row 5 = 5 V · row 15 = LED anode ≈ 2.0 V · row 20 = LED cathode ≈ 0 V
 
 **Lab 2 · Light sensor** (rows 25–35)
 | ref | part | holes |

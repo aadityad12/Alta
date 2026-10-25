@@ -33,7 +33,7 @@ def test_nothing_is_written_until_something_happens(tmp_path):
 
 
 def test_a_spoken_turn_is_logged_end_to_end_with_its_latency(tmp_path, caplog):
-    agent, fake, _ = make(msg(tool("ask_for_probe", probe="Y", at="10c")),
+    agent, fake, _ = make(msg(tool("ask_for_probe", probe="Y", at="15c")),
                           msg("Put the yellow probe in row 10. It should read about 1.9 volts."))
     bench = agent.bench
     rec = recorded(bench, tmp_path)
@@ -74,10 +74,10 @@ def test_probe_events_are_logged(tmp_path):
     rig = Rig(scenario="led_reversed")
     rec = recorded(rig.bench, tmp_path)
     rig.ask()
-    rig.do("Y 10c")
+    rig.do("Y 15c")
     rig.run(1.0)
     (m,) = [r for r in load(rec.path) if r["kind"] == "monitor"]
-    assert m["text"].startswith("Yellow probe (asked for 10c")
+    assert m["text"].startswith("Yellow probe (asked for 15c")
 
 
 def session_log(tmp_path, name="20261024-140000-lab1-led"):
@@ -88,7 +88,7 @@ def session_log(tmp_path, name="20261024-140000-lab1-led"):
         {"t": 1.4, "kind": "transcript", "role": "student", "text": "my LED won't light"},
         {"t": 1.5, "kind": "turn", "source": "student"},
         {"t": 2.6, "kind": "first_text"},
-        {"t": 2.7, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "10c"}, "error": None},
+        {"t": 2.7, "kind": "tool", "name": "ask_for_probe", "input": {"probe": "Y", "at": "15c"}, "error": None},
         {"t": 2.9, "kind": "state", "value": "speaking"},
         {"t": 3.0, "kind": "first_audio", "ms": 150},
         {"t": 5.0, "kind": "state", "value": "idle"},
