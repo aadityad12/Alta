@@ -36,7 +36,8 @@ MAX_LOOKS = 60         # per student: a cap on what a busy table can cost
 FRAME_TIMEOUT_S = 1.5  # the screen didn't answer: no camera right now
 SMALL = (160, 120)     # motion is judged on a frame this small, in grey
 PIX_T = 24.0           # a pixel "changed" if it moved more than this (0-255), after removing any exposure shift
-MOTION_FRAC = 0.01     # ...and motion = more than this share of pixels changed (a hand is far more)
+MOTION_FRAC = 0.03     # ...and motion = more than this share of pixels changed. Measured on the phone camera:
+                       # nothing moving 0.001-0.015, a hand over it 0.1-0.8
 FLOATING_SPREAD_MV = 150  # a probe whose reading swings more than this in 50 ms isn't touching anything
 
 NAMES = {"Y": "yellow", "B": "blue", "G": "green", "W": "white"}

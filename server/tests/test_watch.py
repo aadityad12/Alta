@@ -42,6 +42,14 @@ def test_a_hand_over_the_board_is_motion_and_camera_noise_is_not():
     assert moved(a, frame(hand=(40, 30, 40, 40))) > watch.MOTION_FRAC
 
 
+def test_the_phone_cameras_still_noise_is_not_motion():
+    """The phone camera, with nothing moving, changed up to 1.5 % of the pixels between frames."""
+    a = frame()
+    b = frame()
+    b.reshape(-1)[::66] = 200.0  # ~1.5 % of the pixels flicker
+    assert 0.014 < moved(a, b) < watch.MOTION_FRAC
+
+
 def test_the_camera_adjusting_its_exposure_is_not_motion():
     assert moved(frame(120), frame(150)) < watch.MOTION_FRAC
 
