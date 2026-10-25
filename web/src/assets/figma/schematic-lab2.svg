@@ -1,6 +1,5 @@
 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="480" height="170" viewBox="0 0 480 170" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="drawing">
-<path id="Vector" d="M24 60V100M24 60H14M24 60H34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
 <path id="Vector_2" d="M24 80H90" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
 <path id="Vector_3" d="M90 85C92.7614 85 95 82.7614 95 80C95 77.2386 92.7614 75 90 75C87.2386 75 85 77.2386 85 80C85 82.7614 87.2386 85 90 85Z" fill="#222222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
 <path id="Vector_4" d="M166 80C166 94.3594 154.359 106 140 106C125.641 106 114 94.3594 114 80C114 65.6406 125.641 54 140 54C154.359 54 166 65.6406 166 80Z" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>

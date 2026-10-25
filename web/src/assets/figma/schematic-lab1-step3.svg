@@ -1,9 +1,5 @@
 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="480" height="170" viewBox="0 0 480 170" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="drawing">
-<g id="supply">
-<path id="Vector" d="M24 60V100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
-<path id="Vector_2" d="M14 60H34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
-</g>
 <g id="W1">
 <path id="Vector_3" d="M24 80H96" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="#222222"/>
 </g>

@@ -1,5 +1,5 @@
-// B · At the bench (#28, #29): live camera with ALTA's highlights, the guide card (setup question or
-// schematic + the current step) and the chat dock.
+// B · At the bench (#28, #29): live camera with ALTA's highlights and the probe readings under it, the
+// chat beside it; scroll down for the guide card (setup question or schematic + the current step).
 
 import { useState, type ComponentProps, type MutableRefObject, type ReactNode } from 'react'
 import { BoardOverlay, type Calibration, type OverlayItem } from '../board'
@@ -8,8 +8,8 @@ import type { Lab } from '../app/protocol'
 import { FIT, type CameraStatus, type Source } from '../app/useCamera'
 import dotLive from '../assets/figma/dot-live.svg'
 import userRound from '../assets/figma/user-round-blue.svg'
-import { ChatDock } from '../ui/Chat'
-import { FitSchematic, GuideDots, Header, StepNav, type NavState, type SchematicStep } from '../ui/kit'
+import { ChatPanel } from '../ui/Chat'
+import { FitSchematic, GuideDots, Header, ProbeReadings, StepNav, type NavState, type SchematicStep } from '../ui/kit'
 import { CameraFrame } from './Camera'
 import './screens.css'
 
@@ -24,11 +24,12 @@ type Props = {
   overlay: OverlayItem[]
   banner: ReactNode
   reading: ReactNode
+  probes: ComponentProps<typeof ProbeReadings>
   guide: { step: number; total: number; title: string; text: string; nav: NavState; onBack: () => void; onNext: () => void }
-  dock: ComponentProps<typeof ChatDock>
+  chat: ComponentProps<typeof ChatPanel>
 }
 
-export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, banner, reading, guide, dock }: Props) {
+export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, banner, reading, probes, guide, chat }: Props) {
   const setup = guide.step === 0
   const schematicStep: SchematicStep = guide.step >= 1 && guide.step <= 4 ? (guide.step as SchematicStep) : 'done'
   return (
@@ -55,33 +56,40 @@ export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, b
           >
             {({ w, h }) => <BoardOverlay items={overlay} calibration={calibration} lab={lab} videoW={w} videoH={h} fit={FIT} />}
           </CameraFrame>
+          <ProbeReadings {...probes} />
         </section>
 
-        <section className="guide-col">
+        <section className="chat-col">
           <div className="col-label">
-            <h2 className="t-h3">Guide</h2>
-            <span className="spacer" />
-            <GuideDots total={guide.total + 1} current={guide.step + 1} />
+            <h2 className="t-h3">Chat</h2>
           </div>
-          <div className="guide-card">
-            {setup ? (
-              <SetupQuestion />
-            ) : (
-              <div className="guide-vis">
-                <FitSchematic fill labId={lab.id} step={schematicStep} max={0.95} fallbackUrl={lab.schematic_url} />
-              </div>
-            )}
-            <div className="guide-step">
-              <span className="t-label c-blue">{setup ? 'Setup' : `Step ${guide.step} of ${guide.total}`}</span>
-              <h3 className="t-h2">{guide.title}</h3>
-              {guide.text && <p className="t-body-l c-60">{guide.text}</p>}
-              <span className="gap-8" />
-              <StepNav state={guide.nav} onBack={guide.onBack} onNext={guide.onNext} />
-            </div>
-          </div>
+          <ChatPanel {...chat} />
         </section>
       </div>
-      <ChatDock {...dock} />
+
+      <section className="guide-col">
+        <div className="col-label">
+          <h2 className="t-h3">Guide</h2>
+          <span className="spacer" />
+          <GuideDots total={guide.total + 1} current={guide.step + 1} />
+        </div>
+        <div className="guide-card">
+          {setup ? (
+            <SetupQuestion />
+          ) : (
+            <div className="guide-vis">
+              <FitSchematic fill labId={lab.id} step={schematicStep} max={0.95} fallbackUrl={lab.schematic_url} />
+            </div>
+          )}
+          <div className="guide-step">
+            <span className="t-label c-blue">{setup ? 'Setup' : `Step ${guide.step} of ${guide.total}`}</span>
+            <h3 className="t-h2">{guide.title}</h3>
+            {guide.text && <p className="t-body-l c-60">{guide.text}</p>}
+            <span className="gap-8" />
+            <StepNav state={guide.nav} onBack={guide.onBack} onNext={guide.onNext} />
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

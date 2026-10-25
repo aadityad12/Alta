@@ -1,5 +1,5 @@
-// ChatDock (bottom) and the pulled-up chat sheet (#29). Caption = the latest line; hold the mic
-// (or Space) to talk; `/` focuses the typed fallback (#31).
+// ChatDock (bottom), the chat panel beside the camera on the bench, and the pulled-up chat sheet (#29).
+// Caption = the latest line; hold the mic (or Space) to talk; `/` focuses the typed fallback (#31).
 
 import { useEffect, useRef, type RefObject } from 'react'
 import type { Line } from '../app/protocol'
@@ -111,13 +111,38 @@ export function ChatDock({ tag, tagTone, caption, italic, muted, onPullUp, ...in
   )
 }
 
-type SheetProps = InputProps & { lines: Line[]; onClose: () => void }
-
-export function ChatSheet({ lines, onClose, ...input }: SheetProps) {
+function Messages({ lines }: { lines: Line[] }) {
   const listRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
   }, [lines])
+  return (
+    <div className="messages" ref={listRef}>
+      {lines.length === 0 && <p className="t-body-l msg-empty">Nothing yet. Hold the mic or press / to ask ALTA something.</p>}
+      {lines.map((l, i) => (
+        <div key={i} className={`msg msg-${l.role}`}>
+          <p className={`t-caption bubble${l.final ? '' : ' live'}`}>{l.text}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+type PanelProps = InputProps & { lines: Line[] }
+
+/** The chat beside the live camera on the bench: the whole conversation, always open. */
+export function ChatPanel({ lines, ...input }: PanelProps) {
+  return (
+    <section className="chat-panel" aria-label="Chat with ALTA">
+      <Messages lines={lines} />
+      <InputRow {...input} />
+    </section>
+  )
+}
+
+type SheetProps = InputProps & { lines: Line[]; onClose: () => void }
+
+export function ChatSheet({ lines, onClose, ...input }: SheetProps) {
   return (
     <div className="sheet-layer">
       <div className="sheet-dim" onClick={onClose} />
@@ -130,14 +155,7 @@ export function ChatSheet({ lines, onClose, ...input }: SheetProps) {
             <img src={chevronDown} width={26} height={26} alt="" />
           </button>
         </div>
-        <div className="messages" ref={listRef}>
-          {lines.length === 0 && <p className="t-body-l msg-empty">Nothing yet. Hold the mic or press / to ask ALTA something.</p>}
-          {lines.map((l, i) => (
-            <div key={i} className={`msg msg-${l.role}`}>
-              <p className={`t-caption bubble${l.final ? '' : ' live'}`}>{l.text}</p>
-            </div>
-          ))}
-        </div>
+        <Messages lines={lines} />
         <InputRow {...input} />
       </section>
     </div>

@@ -1,8 +1,8 @@
 // Small building blocks, one per Figma component (Button, StatusChip, Reading, Banner, StepNav v2,
-// ProbeBadge, Logo/Wordmark, Schematic/Lab 1 + Lab 2). Styles in kit.css.
+// ProbeBadge, Logo/Wordmark, Schematic/Lab 1 + Lab 2), plus the bench's probe readings row. Styles in kit.css.
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import type { Probe } from '../app/protocol'
+import { PROBE_NAME, PROBES, type Probe } from '../app/protocol'
 import wordmark from '../assets/brand/wordmark.svg'
 import bookInk from '../assets/figma/book-ink.svg'
 import chevronInk from '../assets/figma/chevron-right-ink.svg'
@@ -118,6 +118,47 @@ export function Reading({ probe, where, value, status, tone }: { probe: Probe; w
   )
 }
 
+// ---------- Probe readings: all four probes, each on a 0–5 V bar (ALTA's expected range in blue) ----------
+
+const FULL_MV = 5000
+
+export type ProbeAsk = { where: string; expected_mv?: number; tol_mv?: number }
+
+export function ProbeReadings({ mv, asked, paused }: { mv?: number[]; asked: Partial<Record<Probe, ProbeAsk>>; paused?: boolean }) {
+  const pct = (x: number) => Math.max(0, Math.min(100, (x / FULL_MV) * 100))
+  return (
+    <div className="probe-readings">
+      {PROBES.map((p, i) => {
+        const v = mv?.[i]
+        const a = asked[p]
+        const live = !paused && v !== undefined && v >= 0
+        const value = paused ? 'Paused' : v === undefined ? '—' : v < 0 ? 'Unplugged' : `${(v / 1000).toFixed(2)} V`
+        const tol = a?.tol_mv ?? 250
+        return (
+          <div key={p} className={`probe-card${a ? ' probe-card-asked' : ''}`}>
+            <div className="probe-card-top">
+              <ProbeBadge probe={p} />
+              <div className="probe-card-text">
+                <span className="t-body c-60">
+                  {PROBE_NAME[p]}
+                  {a?.where && ` · ${a.where}`}
+                </span>
+                <span className={`probe-value${live ? '' : ' c-40'}`}>{value}</span>
+              </div>
+            </div>
+            <div className="probe-bar">
+              {a?.expected_mv !== undefined && (
+                <span className="probe-band" style={{ left: `${pct(a.expected_mv - tol)}%`, width: `${pct(a.expected_mv + tol) - pct(a.expected_mv - tol)}%` }} />
+              )}
+              {live && <span className="probe-needle" style={{ left: `${pct(v)}%` }} />}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ---------- Banner ----------
 
 const BANNER_ICON = { unplug, 'wifi-off': wifiOff, refresh: refresh24, check: circleCheck }
@@ -180,7 +221,7 @@ export type SchematicStep = 1 | 2 | 3 | 4 | 'done'
 const LAB1_DRAWING: Record<string, string> = { 1: lab1Step1, 2: lab1Step2, 3: lab1Step3, 4: lab1Step4, done: lab1Done }
 // [text, left, top, the step that adds it]
 const LAB1_LABELS: [string, number, number, number][] = [
-  ['+5 V', 4, 108, 1],
+  ['+5 V', -19, 68, 1], // level with the wire, just left of where it starts
   ['row 6', 74, 40, 1],
   ['W1', 44, 92, 1],
   ['row 10', 180, 40, 2],
@@ -191,7 +232,7 @@ const LAB1_LABELS: [string, number, number, number][] = [
   ['W2', 352, 92, 4],
 ]
 const LAB2_LABELS: [string, number, number, boolean][] = [
-  ['+5 V', 4, 108, false],
+  ['+5 V', -19, 68, false],
   ['row 26', 66, 96, false],
   ['LDR1', 120, 116, false],
   ['OUT · row 30', 222, 10, true],

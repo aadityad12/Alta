@@ -14,7 +14,7 @@ import { Intro } from './screens/Intro'
 import { ManualPage } from './screens/Manual'
 import { CantHelp, ConfirmNewStudent, GoodLuck, Picker, Reconnecting, Shortcuts } from './screens/Screens'
 import { ChatSheet, type DockState } from './ui/Chat'
-import { Banner, BookButton, Reading, StatusChip, type ChipStatus, type NavState, type ReadingTone } from './ui/kit'
+import { Banner, BookButton, Reading, StatusChip, type ChipStatus, type NavState, type ProbeAsk, type ReadingTone } from './ui/kit'
 import './theme.css'
 
 type Screen = 'intro' | 'picker' | 'calibrate' | 'bench' | 'done'
@@ -94,6 +94,12 @@ export default function App() {
   }, [bench.expects, now])
   const podDown = bench.health?.pod === 'down'
   const reading = useMemo(() => (active ? readingFor(active, bench.probes?.mv, podDown) : null), [active, bench.probes, podDown])
+  // every probe ALTA is waiting on, for the probe readings row under the camera
+  const asked = useMemo(() => {
+    const out: Partial<Record<Probe, ProbeAsk>> = {}
+    for (const e of Object.values(bench.expects)) if (e && !e.clearedAt) out[e.probe] = { where: whereLabel(e.at), expected_mv: e.expected_mv, tol_mv: e.tol_mv }
+    return out
+  }, [bench.expects])
 
   // ALTA confirms a step when the requested reading lands in range, or says so (a ✓ system line).
   useEffect(() => {
@@ -338,8 +344,9 @@ export default function App() {
         overlay={overlay}
         banner={banner}
         reading={reading && <Reading {...reading} />}
+        probes={{ mv: bench.probes?.mv, asked, paused: podDown }}
         guide={guide}
-        dock={dock}
+        chat={{ ...inputProps, lines: bench.lines }}
       />
     )
 
