@@ -118,7 +118,6 @@
   border: 0;
   border-radius: 999px;
   background: var(--orange);
-  box-shadow: 0 0 18px 6px rgb(214 112 56 / 0.55);
   cursor: pointer;
   touch-action: none;
 }
@@ -135,15 +134,15 @@
   50% { transform: scaleY(0.55); }
 }
 
-/* ---------- transcript beside the camera (bench): the sheet's colours, square and bordered ---------- */
+/* ---------- transcript beside the camera (bench): white, square and bordered ---------- */
 .chat-panel {
   display: flex;
   flex-direction: column;
   flex: 1 0 0;
   min-height: 0;
   border: 2px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
 }
 .transcript {
   display: flex;
@@ -154,10 +153,11 @@
   padding: 18px clamp(16px, 1.67vw, 24px);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--paper-20) transparent;
+  scrollbar-color: var(--ink-20) transparent;
 }
 .tr-line { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.tr-tag { padding: 2px 10px; color: var(--paper); }
+.tr-tag { padding: 2px 8px; color: var(--paper); font: 500 12px/18px var(--mono); }
+.tr-text { font: 400 16px/24px var(--sans); }
 .tr-tag-bench { background: var(--blue); }
 .tr-tag-student { background: var(--orange); }
 .tr-system {
@@ -165,8 +165,8 @@
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  border: 2px dashed var(--paper-40);
-  color: var(--paper-60);
+  border: 2px dashed var(--ink-40);
+  color: var(--ink-80);
 }
 .tr-dot { width: 16px; height: 16px; flex: none; border-radius: 999px; }
 .tr-input {
@@ -175,13 +175,16 @@
   gap: 8px;
   flex: none;
   padding: 12px clamp(16px, 1.67vw, 24px) clamp(16px, 1.67vw, 24px);
-  border-top: 2px solid var(--paper-20);
+  border-top: 2px solid var(--ink);
 }
-.tr-hint { color: var(--paper-60); }
+.tr-hint { color: var(--ink-60); }
 .chat-panel .type-here,
 .chat-panel .send,
 .chat-panel .mic,
 .chat-panel .recording { border-radius: 0; }
+.chat-panel .type-here { border: 2px solid var(--ink); }
+.chat-panel .msg-empty { color: var(--ink-60); }
+.chat-panel .mic-muted { background: var(--ink-20); }
 .chat-panel .mic { width: 52px; height: 52px; }
 .chat-panel .recording { height: 52px; }
 

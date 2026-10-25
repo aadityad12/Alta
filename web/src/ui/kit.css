@@ -36,27 +36,31 @@
   width: 48px;
   height: 48px;
   flex: none;
-  border: 0;
-  border-radius: 999px;
+  border: 2px solid var(--ink);
+  border-radius: 0;
   background: var(--paper);
-  box-shadow: var(--shadow-soft);
   cursor: pointer;
 }
+.round-btn:hover { background: var(--ink-10); }
 
-/* ---------- StatusChip ---------- */
+/* ---------- StatusChip: square, ink-bordered, mono label ---------- */
 .chip {
   display: inline-flex;
   align-items: center;
   flex: none;
   gap: 8px;
-  padding: 6px 14px 6px 12px;
-  border-radius: 999px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 2px solid var(--ink);
   background: var(--paper);
-  box-shadow: var(--shadow-soft);
   white-space: nowrap;
 }
+.chip .t-label { font: 500 14px/20px var(--mono); }
+.chip-dot { width: 10px; height: 10px; flex: none; background: var(--blue); }
 .chip-problem { background: var(--orange-10); }
+.chip-problem .chip-dot { background: var(--orange); }
 .chip-off { color: var(--ink-40); }
+.chip-off .chip-dot { background: var(--ink-40); }
 
 /* ---------- Header ---------- */
 .app-header {
@@ -128,14 +132,20 @@
 }
 .probe-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .probe-where { white-space: nowrap; }
-.probe-value-box { padding: 6px 12px; border: 2px solid var(--ink-20); }
-.probe-card-asked .probe-value-box { border-color: var(--blue); }
-.probe-value { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 24px/28px var(--sans); }
-/* a 0–5 V line with end ticks; ALTA's expected range is the blue box, the reading the ink tick */
-.probe-bar { position: relative; height: 14px; flex: none; border-inline: 2px solid var(--ink); }
-.probe-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--ink); }
-.probe-band { position: absolute; top: 1px; bottom: 1px; border: 2px solid var(--blue); background: rgb(83 139 235 / 0.35); }
-.probe-needle { position: absolute; top: 0; width: 4px; height: 14px; margin-left: -2px; background: var(--ink); }
+.probe-card .probe-badge { width: 24px; height: 24px; }
+.probe-card .probe-badge .t-label { font: 500 12px/1 var(--mono); }
+.probe-where { font: 500 14px/20px var(--mono); }
+.probe-value { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 clamp(26px, 2.5vw, 36px)/1.2 var(--mono); }
+.probe-card-asked .probe-value { color: var(--blue); }
+/* a thin 0–5 V line with end ticks; ALTA's expected range is the blue band, the reading a square in the probe's colour */
+.probe-bar { position: relative; height: 14px; flex: none; margin-top: 4px; }
+.probe-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 1px; background: var(--ink-60); }
+.probe-bar::after { content: ''; position: absolute; left: 0; right: 0; top: 1px; height: 12px; border-inline: 1px solid var(--ink-60); }
+.probe-band { position: absolute; top: 3px; height: 8px; border: 1px solid var(--blue); background: rgb(83 139 235 / 0.35); }
+.probe-needle { position: absolute; z-index: 1; top: 2px; width: 10px; height: 10px; margin-left: -5px; border: 1px solid var(--ink); background: var(--ink); }
+.probe-card-Y .probe-needle { background: var(--probe-Y); }
+.probe-card-B .probe-needle { background: var(--probe-B); }
+.probe-card-G .probe-needle { background: var(--probe-G); }
 
 @media (max-width: 599px) {
   .probe-readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -163,7 +163,7 @@ export function ChatPanel({ lines, ...input }: PanelProps) {
           ) : (
             <div key={i} className="tr-line">
               <span className={`t-label tr-tag tr-tag-${l.role}`}>{l.role === 'bench' ? 'ALTA' : 'YOU'}</span>
-              <p className={`t-caption${l.final ? '' : ' live'}`}>{l.text}</p>
+              <p className={`tr-text${l.final ? '' : ' live'}`}>{l.text}</p>
             </div>
           ),
         )}

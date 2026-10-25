@@ -10,9 +10,6 @@ import chevronPaper from '../assets/figma/chevron-right-paper.svg'
 import circleCheck from '../assets/figma/circle-check.svg'
 import dotGuide from '../assets/figma/dot-guide.svg'
 import dotGuideNow from '../assets/figma/dot-guide-current.svg'
-import dotOff from '../assets/figma/dot-off.svg'
-import dotOk from '../assets/figma/dot-ok.svg'
-import dotProblem from '../assets/figma/dot-problem.svg'
 import lockInk from '../assets/figma/lock-ink40.svg'
 import refresh24 from '../assets/figma/refresh-24.svg'
 import lab1Done from '../assets/figma/schematic-lab1-done.svg'
@@ -52,12 +49,11 @@ export function Button({ kind = 'primary', chevron, icon, big, onClick, title, c
 // ---------- StatusChip ----------
 
 export type ChipStatus = 'ok' | 'problem' | 'off'
-const DOT: Record<ChipStatus, string> = { ok: dotOk, problem: dotProblem, off: dotOff }
 
 export function StatusChip({ label, status, title }: { label: string; status: ChipStatus; title?: string }) {
   return (
     <span className={`chip chip-${status}`} title={title}>
-      <img src={DOT[status]} width={10} height={10} alt="" />
+      <span className="chip-dot" aria-hidden />
       <span className="t-label">{label}</span>
     </span>
   )
@@ -137,12 +133,12 @@ export function ProbeReadings({ mv, asked, paused }: { mv?: number[]; asked: Par
         const tol = a?.tol_mv ?? 250
         const range = a?.expected_mv !== undefined ? [a.expected_mv - tol, a.expected_mv + tol] : null
         return (
-          <div key={p} className={`probe-card${a ? ' probe-card-asked' : ''}`}>
+          <div key={p} className={`probe-card probe-card-${p}${a ? ' probe-card-asked' : ''}`}>
             <div className="probe-card-head">
               <ProbeBadge probe={p} />
-              <span className="t-label probe-name">{PROBE_NAME[p]}</span>
+              <span className="t-body probe-name">{PROBE_NAME[p]}</span>
               <span className="spacer" />
-              <span className="t-body c-60 probe-where">{a?.where || '–'}</span>
+              <span className="c-60 probe-where">{a?.where || '–'}</span>
             </div>
             <div className="probe-value-box">
               <span className={`probe-value${live ? '' : ' c-40'}`}>{value}</span>
