@@ -130,6 +130,122 @@ def test_no_tts_still_captions_and_moves_state():
     assert states(sent) == ["speaking", "idle"] and sp.player.written == []
 
 
+def test_tts_failure_puts_voice_down_until_it_speaks_again():
+    agent, _, sent = make()
+    s = agent.bench.session
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    conn = FakeConn()
+    tries = []
+
+    async def flaky():
+        tries.append(1)
+        if len(tries) == 1:
+            raise ConnectionError("offline")
+        return conn
+
+    sp.connect = flaky
+
+    async def go():
+        s.state = State.thinking
+        await sp.say("First try.")  # Cartesia down: captions only, banner up
+        s.state = State.thinking
+        await sp.say("Second try.")  # back: audio again, banner down
+
+    asyncio.run(go())
+    assert [m["voice"] for m in of(sent, "health")] == ["down", "ok"]
+    assert "voice" in of(sent, "health")[0]["fix"]
+    assert [m["text"] for m in of(sent, "transcript") if m["final"]] == ["First try.", "Second try."]
+    assert conn.contexts[0].pushed == ["Second try. "] and len(sp.player.written) == 1
+
+
+class DeadConn(FakeConn):
+    """A websocket Cartesia already closed: opening a context works locally, pushing to it fails."""
+
+    def context(self, **kw):
+        ctx = super().context(**kw)
+
+        async def closed(text):
+            raise ConnectionError("connection idle timeout")
+
+        ctx.push = closed
+        return ctx
+
+
+def test_a_websocket_cartesia_closed_is_reopened_and_the_line_still_spoken():
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    dead, fresh = DeadConn(), FakeConn()
+    sp._conn = dead
+
+    async def reconnect():
+        if sp._conn is None:
+            sp._conn = fresh
+        return sp._conn
+
+    sp.connect = reconnect
+    asyncio.run(sp.say("Row 10 reads 4.99 V. What does that tell you?"))
+    assert fresh.contexts[0].pushed == ["Row 10 reads about 5 volts. ", "What does that tell you? "]
+    assert len(sp.player.written) == 2
+    assert states(sent) == ["speaking", "idle"]
+    assert [m["voice"] for m in of(sent, "health")] == []  # recovered before anyone noticed
+
+
+def test_when_reconnecting_fails_too_it_captions_and_ends_idle_not_stuck_thinking():
+    agent, _, sent = make()
+    s = agent.bench.session
+    s.state = State.thinking
+    sp = Speaker(s, FakePlayer(), voice_id="v1")
+    sp._conn = DeadConn()
+
+    async def still_dead():
+        if sp._conn is None:
+            sp._conn = DeadConn()
+        return sp._conn
+
+    sp.connect = still_dead
+    asyncio.run(sp.say("I can hear you. Where are you in the build?"))
+    assert [m["text"] for m in of(sent, "transcript") if m["final"]] == ["I can hear you. Where are you in the build?"]
+    assert states(sent) == ["speaking", "idle"]
+    assert [m["voice"] for m in of(sent, "health")] == ["down"]
+    assert sp.player.written == []
+
+
+def test_keep_fresh_reopens_an_idle_websocket(monkeypatch):
+    import bench.voice_out as vo
+
+    monkeypatch.setattr(vo, "TTS_REFRESH_S", 0.0)
+    monkeypatch.setattr(vo, "TTS_REFRESH_POLL_S", 0.01)
+    agent, _, sent = make()
+    sp = Speaker(agent.bench.session, FakePlayer(), voice_id="v1")
+    old = FakeConn()
+    old.closed = False
+
+    async def close():
+        old.closed = True
+
+    old.close = close
+    sp._conn = old
+    opened = []
+
+    async def connect():
+        if sp._conn is None:
+            sp._conn = FakeConn()
+            opened.append(sp._conn)
+        return sp._conn
+
+    sp.connect = connect
+
+    async def go():
+        t = asyncio.create_task(sp.keep_fresh())
+        await asyncio.sleep(0.05)
+        t.cancel()
+
+    asyncio.run(go())
+    assert old.closed and opened and sp._conn is opened[-1]
+
+
 def test_does_not_talk_over_a_student_who_is_talking():
     agent, _, sent = make()
     s = agent.bench.session

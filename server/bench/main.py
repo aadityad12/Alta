@@ -114,6 +114,8 @@ def create_app(
             health.off("voice")
         if use_speaker:
             bench.speaker = await open_speaker()
+            if bench.speaker:
+                tasks.append(asyncio.create_task(bench.speaker.keep_fresh()))  # outlive Cartesia's idle timeout
         if use_mic:
             bench.voice = open_voice()
         if agent:

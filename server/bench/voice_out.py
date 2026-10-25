@@ -56,6 +56,8 @@ AUDITION_LINES = ("Okay, let's find where the power stops. Put the yellow probe 
                   "flowing, and you found it yourself.")
 OUTPUT_FORMAT = {"container": "raw", "encoding": "pcm_s16le", "sample_rate": TTS_RATE}
 TTS_TIMEOUT_S = 10.0
+TTS_REFRESH_S = 60.0  # Cartesia closes an idle websocket ("connection idle timeout"): reopen it before that
+TTS_REFRESH_POLL_S = 5.0
 
 
 # ---------- text ----------
@@ -237,6 +239,7 @@ class Speaker:
         self._muted: object = None
         self._ctx = None
         self._recv: asyncio.Task | None = None
+        self._used = time.monotonic()  # last time the websocket was opened or used
 
     async def connect(self):
         """Open (or reuse) the websocket. Called at startup so the first reply doesn't pay for the handshake."""
@@ -246,7 +249,22 @@ class Speaker:
 
                 self._client = AsyncCartesia(api_key=os.environ.get("CARTESIA_API_KEY"))
             self._conn = await self._client.tts.websocket_connect().enter()
+            self._used = time.monotonic()
         return self._conn
+
+    async def keep_fresh(self) -> None:
+        """Runs for the app's lifetime: reopen the websocket once it's gone TTS_REFRESH_S unused, so Cartesia's
+        idle timeout never closes it under us and the next reply still doesn't pay for the handshake."""
+        while True:
+            await asyncio.sleep(TTS_REFRESH_POLL_S)
+            if self._conn is None or self._lock.locked() or time.monotonic() - self._used < TTS_REFRESH_S:
+                continue
+            async with self._lock:
+                await self.close()
+                try:
+                    await self.connect()
+                except Exception as e:
+                    log.warning("tts reconnect failed (%r); will retry on the next reply", e)
 
     async def close(self) -> None:
         if self._conn is not None:
@@ -280,6 +298,7 @@ class Speaker:
             said: list[str] = []
             ctx = None
             sent_at: list[float] = []
+            retried = False
             async for sentence in sentences:
                 if self._muted is owner or s.generation != gen:
                     continue  # keep draining so the writer never blocks
@@ -298,9 +317,12 @@ class Speaker:
                             sent_at.append(time.monotonic())
                             s.record("first_sentence")
                     except Exception as e:
-                        log.warning("tts push failed: %r (captions only from here)", e)
-                        await s.health.down("voice", f"tts: {type(e).__name__}")
-                        ctx = None
+                        ctx = None if retried else await self._reconnect(e, said, owner, sent_at)
+                        retried = True
+                        if ctx is None:
+                            log.warning("tts push failed: %r (captions only from here)", e)
+                            await s.health.down("voice", f"tts: {type(e).__name__}")
+                            await self._enter_speaking(owner)  # still speaking -> idle, like any reply
             if said:
                 await s.say("bench", " ".join(said))
             if ctx is not None and self._muted is not owner:
@@ -316,8 +338,11 @@ class Speaker:
                 except Exception as e:
                     log.warning("tts receive failed: %r", e)
                     await s.health.down("voice", f"tts: {type(e).__name__}")
+                    self._conn = None  # it may be dead: the next reply opens a fresh one
                 self._recv = None
             self._ctx = None
+            if said and s.state is State.thinking and s.generation == gen and self._muted is not owner:
+                await self._enter_speaking(owner)  # no audio ever came: end like a spoken reply, not stuck thinking
             while self.player.pending() and self._muted is not owner:
                 await asyncio.sleep(0.02)
             if self._muted is not owner:
@@ -326,9 +351,36 @@ class Speaker:
                 await s.set_state(State.idle)
             return " ".join(said)
 
+    async def _reconnect(self, e: Exception, said: list[str], owner: object, sent_at: list[float]):
+        """A push failed: the websocket died under us (Cartesia closed it, or the network blipped). Open a fresh
+        one and resend what this utterance has said so far. Returns the new context, or None."""
+        log.warning("tts push failed: %r; reconnecting", e)
+        if self._recv is not None:
+            self._recv.cancel()
+            self._recv = None
+        self._conn = None  # already dead: nothing to close
+        ctx = await self._open_context()
+        if ctx is None:
+            return None
+        self._recv = asyncio.create_task(self._receive(ctx, owner, sent_at))
+        try:
+            for sentence in said:
+                await ctx.push(normalize(sentence) + " ")
+        except Exception as e2:
+            log.warning("tts push failed again: %r", e2)
+            self._recv.cancel()
+            self._recv = None
+            self._conn = None
+            return None
+        if not sent_at:
+            sent_at.append(time.monotonic())
+            self.session.record("first_sentence")
+        return ctx
+
     async def _open_context(self):
         try:
             conn = await self.connect()
+            self._used = time.monotonic()
             gen = {k: v for k, v in (("speed", self.speed), ("emotion", self.emotion)) if v}
             kw = {"generation_config": gen} if gen else {}
             self._ctx = conn.context(
