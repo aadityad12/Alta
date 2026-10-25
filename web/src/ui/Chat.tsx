@@ -2,7 +2,7 @@
 // Caption = the latest line; hold the mic (or Space) to talk; `/` focuses the typed fallback (#31).
 
 import { useEffect, useRef, type RefObject } from 'react'
-import type { Line } from '../app/protocol'
+import { PROBE_NAME, type Line, type Probe } from '../app/protocol'
 import chevronDown from '../assets/figma/chevron-down-paper.svg'
 import micMuted from '../assets/figma/mic-muted.svg'
 import micPaper from '../assets/figma/mic-paper.svg'
@@ -21,9 +21,10 @@ type InputProps = {
   micTitle?: string
   onTalk: (down: boolean) => void
   onFocusChange: (focused: boolean) => void
+  placeholder?: string
 }
 
-function InputRow({ dock, draft, setDraft, onSend, inputRef, micDisabled, micTitle, onTalk, onFocusChange }: InputProps) {
+function InputRow({ dock, draft, setDraft, onSend, inputRef, micDisabled, micTitle, onTalk, onFocusChange, placeholder = 'Type here…' }: InputProps) {
   const holding = useRef(false)
   const up = () => {
     if (!holding.current) return
@@ -38,7 +39,7 @@ function InputRow({ dock, draft, setDraft, onSend, inputRef, micDisabled, micTit
           ref={inputRef}
           className="t-body-l"
           value={draft}
-          placeholder="Type here…"
+          placeholder={placeholder}
           onChange={(e) => setDraft(e.target.value)}
           onFocus={() => onFocusChange(true)}
           onBlur={() => onFocusChange(false)}
@@ -111,11 +112,17 @@ export function ChatDock({ tag, tagTone, caption, italic, muted, onPullUp, ...in
   )
 }
 
-function Messages({ lines }: { lines: Line[] }) {
-  const listRef = useRef<HTMLDivElement>(null)
+/** A scroll box that jumps to the newest line whenever the lines change. */
+function useStickToBottom(lines: Line[]) {
+  const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
+    ref.current?.scrollTo({ top: ref.current.scrollHeight })
   }, [lines])
+  return ref
+}
+
+function Messages({ lines }: { lines: Line[] }) {
+  const listRef = useStickToBottom(lines)
   return (
     <div className="messages" ref={listRef}>
       {lines.length === 0 && <p className="t-body-l msg-empty">Nothing yet. Hold the mic or press / to ask ALTA something.</p>}
@@ -128,14 +135,43 @@ function Messages({ lines }: { lines: Line[] }) {
   )
 }
 
+const PROBE_BY_NAME = Object.fromEntries(Object.entries(PROBE_NAME).map(([p, name]) => [name, p as Probe]))
+
+/** A system line ("Yellow reads 5.00 V in row 6 ✓"): a dashed box, with the probe's colour dot when it names one. */
+function SystemLine({ text }: { text: string }) {
+  const probe = PROBE_BY_NAME[text.split(' ')[0]]
+  return (
+    <div className="tr-system">
+      {probe && <span className={`tr-dot probe-${probe}`} aria-hidden />}
+      <span className="t-body">{text}</span>
+    </div>
+  )
+}
+
 type PanelProps = InputProps & { lines: Line[] }
 
-/** The chat beside the live camera on the bench: the whole conversation, always open. */
+/** The transcript beside the live camera on the bench: the whole conversation, always open. */
 export function ChatPanel({ lines, ...input }: PanelProps) {
+  const listRef = useStickToBottom(lines)
   return (
-    <section className="chat-panel" aria-label="Chat with ALTA">
-      <Messages lines={lines} />
-      <InputRow {...input} />
+    <section className="chat-panel" aria-label="Transcript">
+      <div className="transcript" ref={listRef}>
+        {lines.length === 0 && <p className="t-body-l msg-empty">Nothing yet. Hold the mic or press / to ask ALTA something.</p>}
+        {lines.map((l, i) =>
+          l.role === 'system' ? (
+            <SystemLine key={i} text={l.text} />
+          ) : (
+            <div key={i} className="tr-line">
+              <span className={`t-label tr-tag tr-tag-${l.role}`}>{l.role === 'bench' ? 'ALTA' : 'YOU'}</span>
+              <p className={`t-caption${l.final ? '' : ' live'}`}>{l.text}</p>
+            </div>
+          ),
+        )}
+      </div>
+      <div className="tr-input">
+        <span className="t-body tr-hint">Hold the mic or press / to ask</span>
+        <InputRow {...input} placeholder="Type to ALTA…" />
+      </div>
     </section>
   )
 }

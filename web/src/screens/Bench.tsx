@@ -1,19 +1,22 @@
 // B · At the bench (#28, #29): live camera with ALTA's highlights and the probe readings under it, the
-// chat beside it; scroll down for the guide card (setup question or schematic + the current step).
+// transcript beside both; scroll down for the guide card (setup question or schematic + the current step).
 
 import { useState, type ComponentProps, type MutableRefObject, type ReactNode } from 'react'
-import { BoardOverlay, type Calibration, type OverlayItem } from '../board'
+import { BoardOverlay, type Calibration, type Fit, type OverlayItem } from '../board'
 import { labTitle } from '../app/labs'
 import type { Lab } from '../app/protocol'
-import { FIT, type CameraStatus, type Source } from '../app/useCamera'
+import type { CameraStatus, Source } from '../app/useCamera'
 import dotLive from '../assets/figma/dot-live.svg'
 import userRound from '../assets/figma/user-round-blue.svg'
 import { ChatPanel } from '../ui/Chat'
-import { FitSchematic, GuideDots, Header, ProbeReadings, StepNav, type NavState, type SchematicStep } from '../ui/kit'
+import { FitSchematic, Header, ProbeReadings, StepBoxes, StepNav, type NavState, type SchematicStep } from '../ui/kit'
 import { CameraFrame } from './Camera'
 import './screens.css'
 
-const SETUP_CHECKS = ['Red pod wire in the + rail next to column a', 'Black pod wire in the − rail next to it', 'Phone on the stand, looking straight down']
+// the frame fills the column above the probe row (not 4:3), so show the whole video in it rather than crop the board
+const BENCH_FIT: Fit = 'contain'
+
+const SETUP_CHECKS =['Red pod wire in the + rail next to column a', 'Black pod wire in the − rail next to it', 'Phone on the stand, looking straight down']
 
 type Props = {
   lab: Lab
@@ -47,6 +50,7 @@ export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, b
             status={cam.status}
             mediaRef={mediaRef}
             onRetry={cam.retry}
+            fit={BENCH_FIT}
             extra={
               <>
                 {banner && <div className="cam-banner">{banner}</div>}
@@ -54,14 +58,14 @@ export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, b
               </>
             }
           >
-            {({ w, h }) => <BoardOverlay items={overlay} calibration={calibration} lab={lab} videoW={w} videoH={h} fit={FIT} />}
+            {({ w, h }) => <BoardOverlay items={overlay} calibration={calibration} lab={lab} videoW={w} videoH={h} fit={BENCH_FIT} />}
           </CameraFrame>
           <ProbeReadings {...probes} />
         </section>
 
         <section className="chat-col">
           <div className="col-label">
-            <h2 className="t-h3">Chat</h2>
+            <h2 className="t-h3">Transcript</h2>
           </div>
           <ChatPanel {...chat} />
         </section>
@@ -71,7 +75,7 @@ export function Bench({ lab, headerRight, cam, mediaRef, calibration, overlay, b
         <div className="col-label">
           <h2 className="t-h3">Guide</h2>
           <span className="spacer" />
-          <GuideDots total={guide.total + 1} current={guide.step + 1} />
+          <StepBoxes total={guide.total} current={guide.step} />
         </div>
         <div className="guide-card">
           {setup ? (

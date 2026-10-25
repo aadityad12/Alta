@@ -122,19 +122,34 @@
 /* camera as big as the height allows (the label + gap above it take 40px), leaving the side column room */
 .calibrate .cam-col { width: min(calc(100cqw - var(--gap) - clamp(320px, 27.8vw, 400px)), calc((100cqh - 40px) * 4 / 3)); }
 
-/* ---------- B at the bench: camera + probe readings beside the chat fill the first screen; scroll for the guide ---------- */
-.bench { --row: clamp(14px, 2.67vh, 24px); --probes-h: 92px; padding-bottom: var(--pad); }
+/* ---------- B at the bench: camera + probe readings under it, transcript beside both, fill the first screen; scroll for the guide ---------- */
+/* square, ink-bordered shapes on a dotted page (colours and type sizes stay the Figma ones) */
+.bench {
+  --row: clamp(14px, 2.67vh, 24px);
+  padding-bottom: var(--pad);
+  background-image: radial-gradient(var(--ink-20) 1px, transparent 1.5px);
+  background-size: 16px 16px;
+}
 /* the screen's top padding, the 48px header, the gap under it and a bottom margin take the rest */
-.bench-body { flex: none; height: calc(100dvh - 48px - 3 * var(--row)); }
-/* under the camera: the probe row and its gap; beside it: the chat column */
-.bench .cam-col { width: min(calc(100cqw - var(--gap) - clamp(360px, 32vw, 420px)), calc((100cqh - 40px - var(--probes-h) - 12px) * 4 / 3)); }
-.bench .probe-card { height: var(--probes-h); }
+.bench .bench-body { flex: none; height: calc(100dvh - 48px - 3 * var(--row)); }
+/* the camera column takes what the transcript leaves; the camera fills it above the probe row (video shown whole: contain) */
+.bench .cam-col { width: calc(100cqw - var(--gap) - clamp(340px, 28vw, 440px)); }
 .chat-col { display: flex; flex-direction: column; gap: 12px; flex: 1 0 0; min-width: 0; }
+.bench .camera { aspect-ratio: auto; flex: 1 0 0; min-height: 0; border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .banner,
+.bench .reading { border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .pill { border-radius: 0; }
+.bench .btn { border-radius: 0; }
+.bench .btn-secondary,
+.bench .btn-secondary:hover { border: 2px solid var(--ink); box-shadow: none; }
+.bench .btn-secondary:hover { filter: brightness(0.95); }
 
 /* the guide below: schematic (or the setup question) on the left, the step on the right */
 .bench .guide-col { flex: none; }
-.bench .guide-card { flex: none; flex-direction: row; min-height: clamp(320px, 42vh, 400px); }
-.bench .guide-step { width: clamp(360px, 32vw, 480px); justify-content: center; }
+.bench .guide-card { flex: none; flex-direction: row; min-height: clamp(320px, 42vh, 400px); border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .guide-step { width: clamp(360px, 32vw, 480px); justify-content: center; border-left: 2px solid var(--ink); }
+.bench .setup-check .box { border: 2px solid var(--ink); border-radius: 0; box-shadow: none; }
+.bench .setup-check input:checked + .box { border-color: var(--blue); }
 
 .guide-col { display: flex; flex-direction: column; gap: 12px; flex: 1 0 0; min-width: 0; }
 .guide-card {
@@ -399,12 +414,12 @@
   .calibrate-body { flex-direction: column; flex: none; container-type: normal; }
   .bench .cam-col,
   .calibrate .cam-col { width: 100%; }
-  .bench-body { height: auto; }
-  .bench .probe-card { height: auto; }
+  .bench .bench-body { height: auto; }
+  .bench .camera { aspect-ratio: 4 / 3; flex: none; }
   .chat-col { flex: none; }
   .chat-panel { flex: none; height: min(480px, 70dvh); }
   .bench .guide-card { flex-direction: column; min-height: 0; }
-  .bench .guide-step { width: auto; }
+  .bench .guide-step { width: auto; border-left: 0; border-top: 2px solid var(--ink); }
   .guide-col,
   .guide-card,
   .cal-panel { flex: none; }

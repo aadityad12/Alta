@@ -2,7 +2,7 @@
 // (for <BoardOverlay> and calibration). Shows "Camera missing" (C3) when there's no camera.
 
 import { useEffect, useLayoutEffect, useRef, type MutableRefObject, type ReactNode } from 'react'
-import { useMediaSize } from '../board'
+import { useMediaSize, type Fit } from '../board'
 import { FIT, type CameraStatus, type Source } from '../app/useCamera'
 import cameraOff from '../assets/figma/camera-off.svg'
 import { Button } from '../ui/kit'
@@ -17,10 +17,11 @@ type Props = {
   onSize?: (size: { w: number; h: number }) => void
   children?: (size: { w: number; h: number }) => ReactNode // layers that need the video's pixel size
   extra?: ReactNode // banner / reading, pinned inside the frame
+  fit?: Fit // how the video fills the frame; overlays on top must use the same
 }
 
 /** 4:3, as wide as its column (screens.css sizes the column). */
-export function CameraFrame({ source, stream, status, mediaRef, onRetry, onSize, children, extra }: Props) {
+export function CameraFrame({ source, stream, status, mediaRef, onRetry, onSize, children, extra, fit = FIT }: Props) {
   const localRef = useRef<HTMLVideoElement | null>(null)
   const { w, h } = useMediaSize(localRef, `${source?.id}:${status}:${stream?.id}`)
 
@@ -56,7 +57,7 @@ export function CameraFrame({ source, stream, status, mediaRef, onRetry, onSize,
         </div>
       ) : (
         <>
-          <video ref={setRef} className="camera-media" style={{ objectFit: FIT }} autoPlay muted playsInline />
+          <video ref={setRef} className="camera-media" style={{ objectFit: fit }} autoPlay muted playsInline />
           {w > 0 && h > 0 && children?.({ w, h })}
           {extra}
         </>

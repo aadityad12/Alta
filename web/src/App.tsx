@@ -94,10 +94,11 @@ export default function App() {
   }, [bench.expects, now])
   const podDown = bench.health?.pod === 'down'
   const reading = useMemo(() => (active ? readingFor(active, bench.probes?.mv, podDown) : null), [active, bench.probes, podDown])
-  // every probe ALTA is waiting on, for the probe readings row under the camera
+  // every probe ALTA is waiting on, for the probe readings row under the camera (the hole, e.g. "10c", or "row 10" / "+ rail")
   const asked = useMemo(() => {
     const out: Partial<Record<Probe, ProbeAsk>> = {}
-    for (const e of Object.values(bench.expects)) if (e && !e.clearedAt) out[e.probe] = { where: whereLabel(e.at), expected_mv: e.expected_mv, tol_mv: e.tol_mv }
+    for (const e of Object.values(bench.expects))
+      if (e && !e.clearedAt) out[e.probe] = { where: e.at && /^\d+[a-j]$/.test(e.at) ? e.at : whereLabel(e.at), expected_mv: e.expected_mv, tol_mv: e.tol_mv }
     return out
   }, [bench.expects])
 

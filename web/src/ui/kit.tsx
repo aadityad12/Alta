@@ -126,36 +126,53 @@ export type ProbeAsk = { where: string; expected_mv?: number; tol_mv?: number }
 
 export function ProbeReadings({ mv, asked, paused }: { mv?: number[]; asked: Partial<Record<Probe, ProbeAsk>>; paused?: boolean }) {
   const pct = (x: number) => Math.max(0, Math.min(100, (x / FULL_MV) * 100))
+  const volts = (x: number) => (x / 1000).toFixed(2)
   return (
     <div className="probe-readings">
       {PROBES.map((p, i) => {
         const v = mv?.[i]
         const a = asked[p]
         const live = !paused && v !== undefined && v >= 0
-        const value = paused ? 'Paused' : v === undefined ? '—' : v < 0 ? 'Unplugged' : `${(v / 1000).toFixed(2)} V`
+        const value = paused || v === undefined ? '—' : v < 0 ? '– –' : `${volts(v)} V`
         const tol = a?.tol_mv ?? 250
+        const range = a?.expected_mv !== undefined ? [a.expected_mv - tol, a.expected_mv + tol] : null
         return (
           <div key={p} className={`probe-card${a ? ' probe-card-asked' : ''}`}>
-            <div className="probe-card-top">
+            <div className="probe-card-head">
               <ProbeBadge probe={p} />
-              <div className="probe-card-text">
-                <span className="t-body c-60">
-                  {PROBE_NAME[p]}
-                  {a?.where && ` · ${a.where}`}
-                </span>
-                <span className={`probe-value${live ? '' : ' c-40'}`}>{value}</span>
-              </div>
+              <span className="t-label probe-name">{PROBE_NAME[p]}</span>
+              <span className="spacer" />
+              <span className="t-body c-60 probe-where">{a?.where || '–'}</span>
+            </div>
+            <div className="probe-value-box">
+              <span className={`probe-value${live ? '' : ' c-40'}`}>{value}</span>
             </div>
             <div className="probe-bar">
-              {a?.expected_mv !== undefined && (
-                <span className="probe-band" style={{ left: `${pct(a.expected_mv - tol)}%`, width: `${pct(a.expected_mv + tol) - pct(a.expected_mv - tol)}%` }} />
-              )}
+              {range && <span className="probe-band" style={{ left: `${pct(range[0])}%`, width: `${pct(range[1]) - pct(range[0])}%` }} />}
               {live && <span className="probe-needle" style={{ left: `${pct(v)}%` }} />}
             </div>
           </div>
         )
       })}
     </div>
+  )
+}
+
+// ---------- Step boxes: the guide's progress, 1 … n joined by a line (done ink, current blue) ----------
+
+export function StepBoxes({ total, current }: { total: number; current: number }) {
+  return (
+    <ol className="step-boxes" aria-label={current ? `Step ${current} of ${total}` : 'Setup'}>
+      {Array.from({ length: total }, (_, i) => {
+        const n = i + 1
+        const tone = n < current ? 'done' : n === current ? 'now' : 'todo'
+        return (
+          <li key={n} className={`step-box step-box-${tone}`}>
+            {n}
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

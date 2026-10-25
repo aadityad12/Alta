@@ -109,31 +109,56 @@
 .pill-bad { background: var(--orange-10); color: var(--orange); }
 .pill-good { background: var(--blue-10); color: var(--blue); }
 
-/* ---------- Probe readings (a row of four, under the camera) ---------- */
+/* ---------- Probe readings (a row of four): square, bordered cards ---------- */
 .probe-readings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .probe-card {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 12px 16px 14px 14px;
-  border-radius: 18px;
+  padding: 12px;
+  border: 2px solid var(--ink);
   background: var(--paper);
-  box-shadow: var(--shadow-soft);
+  container-type: inline-size;
 }
-.probe-card-asked { box-shadow: inset 0 0 0 2px var(--blue), var(--shadow-soft); }
-.probe-card-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.probe-card-text { display: flex; flex-direction: column; min-width: 0; }
-.probe-card-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.probe-value { font: 700 24px/28px var(--sans); }
-.probe-bar { position: relative; height: 6px; flex: none; border-radius: 3px; background: var(--ink-10); }
-.probe-band { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: rgb(83 139 235 / 0.35); }
-.probe-needle { position: absolute; top: -4px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--ink); }
+.probe-card-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* too narrow for badge + name + "row 10" at a readable size: the badge's letter names the probe */
+@container (max-width: 139px) {
+  .probe-name { display: none; }
+}
+.probe-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.probe-where { white-space: nowrap; }
+.probe-value-box { padding: 6px 12px; border: 2px solid var(--ink-20); }
+.probe-card-asked .probe-value-box { border-color: var(--blue); }
+.probe-value { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 24px/28px var(--sans); }
+/* a 0–5 V line with end ticks; ALTA's expected range is the blue box, the reading the ink tick */
+.probe-bar { position: relative; height: 14px; flex: none; border-inline: 2px solid var(--ink); }
+.probe-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--ink); }
+.probe-band { position: absolute; top: 1px; bottom: 1px; border: 2px solid var(--blue); background: rgb(83 139 235 / 0.35); }
+.probe-needle { position: absolute; top: 0; width: 4px; height: 14px; margin-left: -2px; background: var(--ink); }
 
 @media (max-width: 599px) {
   .probe-readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- Step boxes ---------- */
+.step-boxes { display: flex; align-items: center; margin: 0; padding: 0; list-style: none; }
+.step-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  font: 500 16px/1 var(--mono);
+}
+.step-box + .step-box { margin-left: 22px; }
+.step-box + .step-box::before { content: ''; position: absolute; right: calc(100% + 2px); top: 50%; width: 22px; height: 2px; margin-top: -1px; background: var(--ink); }
+.step-box-done { background: var(--ink); color: var(--paper); }
+.step-box-now { border-color: var(--blue); background: var(--blue); color: var(--paper); }
 
 /* ---------- Banner ---------- */
 .banner {
