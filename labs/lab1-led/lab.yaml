@@ -24,9 +24,10 @@ parts:
 
 nets:
   - {id: n_5v,          label: "5 V",         holes: ["rail:a+", "5:a-e"], expected_mv: 4980, tol_mv: 250}
-  # Red LED forward voltage at ~14 mA: measured 2019 mV (2014–2024). Kept tight so it
-  # doesn't overlap wrong_resistor_10k (measured 1759).
-  - {id: n_led_anode,   label: "LED anode",   holes: ["15:a-e"],           expected_mv: 2020, tol_mv: 120}
+  # Red LED forward voltage at ~14 mA: measured 2019 mV on Sat, 2249–2378 mV on the demo
+  # board Sun 05:00 (#44 run 3). 1950–2450 covers both and stays clear of
+  # wrong_resistor_10k (measured 1759).
+  - {id: n_led_anode,   label: "LED anode",   holes: ["15:a-e"],           expected_mv: 2200, tol_mv: 250}
   - {id: n_led_cathode, label: "LED cathode", holes: ["20:a-e"],           expected_mv: 0,    tol_mv: 100}
   - {id: n_gnd,         label: "Ground",      holes: ["rail:a-"],          expected_mv: 0,    tol_mv: 100}
 
@@ -61,7 +62,7 @@ faults:
     root_cause: "10 kΩ is about 45× more resistance than 220 Ω, so only ≈0.3 mA flows instead of ≈14 mA. At such a small current the LED barely glows and its forward voltage drops to ≈1.76 V."
     hints:
       - "L1 nudge: It lights, just barely. What sets how much current goes through the LED?"
-      - "L2 question: Row 15 reads about 1.76 volts, a bit lower than the 2 volts we expected. What does that tell you about how much current is flowing?"
+      - "L2 question: Row 15 reads about 1.76 volts, lower than the 2.2 volts we expected. What does that tell you about how much current is flowing?"
       - "L3 point: Take a look at the resistor between rows 5 and 15. Can you read its color bands?"
       - "L4 fix: That's a 10 kΩ, brown-black-orange. Swap it for the 220 Ω, red-red-brown."
 

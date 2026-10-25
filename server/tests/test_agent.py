@@ -117,13 +117,13 @@ def test_ask_for_probe_shows_expected_band_and_highlight():
     )
     reply = run(agent.turn("my LED won't light"))
     assert reply == "Put the yellow probe in row 10, right after the resistor."
-    assert of(sent, "expect") == [{"type": "expect", "probe": "Y", "at": "15c", "expected_mv": 2020,
-                                    "tol_mv": 120, "label": "LED anode"}]
+    assert of(sent, "expect") == [{"type": "expect", "probe": "Y", "at": "15c", "expected_mv": 2200,
+                                    "tol_mv": 250, "label": "LED anode"}]
     assert of(sent, "overlay")[0]["items"] == [{"id": "probe-Y", "kind": "hole", "at": "15c",
                                                "style": "probe-Y", "pulse": True}]
     assert states(sent) == ["thinking", "speaking", "idle"]
     assert of(sent, "transcript")[-1]["text"] == reply
-    assert "expecting about 2020 mV (LED anode)" in last_tool_results(fake.requests[1])[0]["content"]
+    assert "expecting about 2200 mV (LED anode)" in last_tool_results(fake.requests[1])[0]["content"]
     assert_history_valid(agent.messages)
 
 
@@ -157,7 +157,7 @@ def test_read_probes_reports_readings_and_requests():
     run(agent.turn("I put it there"))
     data = json.loads(last_tool_results(fake.requests[2])[0]["content"])
     y = data["probes"]["Y"]
-    assert (y["mv"], y["asked_at"], y["expected_mv"], y["unplugged"]) == (5012, "15c", 2020, False)
+    assert (y["mv"], y["asked_at"], y["expected_mv"], y["unplugged"]) == (5012, "15c", 2200, False)
     assert data["probes"]["B"]["unplugged"] is True and data["vcc_mv"] == 4990
 
 
