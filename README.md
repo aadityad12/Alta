@@ -1,4 +1,4 @@
-# ALTA
+<h1 align="center"><img src="docs/img/logo.png" alt="ALTA" width="360"></h1>
 
 **ALTA (AI Lab Teaching Assistant)** is a voice-driven lab TA for intro
 electronics. It **measures** the student's breadboard through a probe pod,
@@ -7,6 +7,11 @@ good TA does: by asking for a measurement, asking a question, and pointing at
 the spot, without handing over the answer.
 
 Built in 36 hours at **Cal Hacks 13.0** by a team of four.
+
+![The ALTA student screen during Lab 1: the live overhead camera view of the
+breadboard on the left, four probe gauges (yellow 4.98 V, blue 0.00 V, green
+0.39 V, white 0.00 V) underneath, and the transcript on the right where ALTA
+greets the student and asks whether the LED is lighting up](docs/img/screen-lab.png)
 
 ---
 
@@ -65,12 +70,24 @@ yet, stated plainly:
 
 The full list is under [Known limitations](#known-limitations).
 
+![The lab picker: Lab 1, Light an LED (red wire, 220 Ω resistor, red LED,
+black wire) and Lab 2, Light sensor (red wire, photoresistor, 10 kΩ resistor,
+black wire), each card with its schematic and a Start lab
+button](docs/img/screen-pick-lab.png)
+
 ## How it works
 
 ![The ALTA setup: a phone camera on a stand above the lab breadboard, the probe
 pod (an Arduino Uno in a printed dock) wired to the breadboard, and a laptop
 showing the live board, the probe reading and ALTA's spoken
 reply](docs/img/setup.png)
+
+The real bench, seen from above:
+
+![The real bench from above: the Arduino Uno probe pod in its pink 3D-printed
+dock with the probe wiring on a mini breadboard, colored probe wires running
+to the 830-point lab breadboard below, and the USB and power cables on the
+left](docs/img/bench-top.jpg)
 
 Six things on the desk, each doing a job a human TA would do:
 
@@ -206,6 +223,10 @@ that file, not changing code. `labs/validate.py` checks every lab file.
 | Probe wires | Four colored jumper wires, each through a **10 kΩ resistor** for protection, plus power and ground wires |
 | Phone on a stand | Overhead camera, about 25 cm above the board (iPhone via Continuity Camera) |
 | Lab kits | Lab 1: 220 Ω resistor + red LED. Lab 2: photoresistor + 10 kΩ resistor |
+
+| The pod | Its wiring |
+| --- | --- |
+| ![The Arduino Uno pod in its pink dock, power and status lights on, probe and power jumpers in the headers](docs/img/pod-uno.jpg) | ![The pod's mini breadboard: the push-to-talk button, the RGB status LED, and a 10 kΩ protection resistor for each probe wire](docs/img/pod-wiring.jpg) |
 
 **Safety:** everything on the bench runs at 5 V or less, from the Uno's USB
 supply.
