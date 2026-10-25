@@ -329,6 +329,19 @@ def test_slow_turn_gets_a_filler_line_first():
     assert states(sent) == ["thinking", "speaking", "idle"]
 
 
+def test_never_a_filler_two_turns_in_a_row():
+    async def slow(kwargs):
+        await asyncio.sleep(0.15)
+        return msg("Row 10 reads 5 V.")
+
+    agent, sp, sent = streaming_agent(slow, slow, slow)
+    agent.filler_s = 0.05
+    for _ in range(3):
+        asyncio.run(agent.turn("what does it read?"))
+    fillers = [p for p in pushed(sp) if p == "Mm, let me check. " or p.endswith("sec. ") or p.endswith("look. ")]
+    assert len(fillers) == 2  # turns 1 and 3, not 2
+
+
 def test_no_filler_for_probe_events_or_quick_turns():
     agent, sp, _ = streaming_agent(msg("Quick one."), msg("<silent>"))
     agent.filler_s = 0.05

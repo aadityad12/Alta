@@ -60,7 +60,7 @@ ALREADY_SAID = "The student already heard you say: \"{}\" Don't repeat it. Say o
 # Text written before a tool call can come back as a hidden progress note instead of text; then Claude thinks
 # it already spoke and writes a report about the student. Say plainly that nothing was heard.
 NOTHING_SAID = "The student hasn't heard anything from you this turn. What you write next is spoken to them directly."
-FILLER_S = 1.5  # BENCH_FILLER_S; 0 = off
+FILLER_S = 2.5  # BENCH_FILLER_S; 0 = off. Only slow turns get one, and never two turns in a row
 FILLER_LINES = ("Mm, let me check.", "Okay, one sec.", "Hmm, let me look.")
 WARM_EVERY_S = 270  # the cache lives 5 minutes; re-warm a bit before that when nothing else has used it
 
@@ -178,8 +178,8 @@ class Agent:
             start, kept = self._add_user(msgs, said)
             await s.set_state(State.thinking)
             self._live, self._reply_live, self._owner = [], False, object()
-            self._filler_spoke = False
-            filler = self._start_filler(gen) if event is None else None
+            filler_again, self._filler_spoke = self._filler_spoke, False
+            filler = self._start_filler(gen) if event is None and not filler_again else None
             try:
                 async with asyncio.timeout(TURN_TIMEOUT_S):
                     reply = await self._rounds(msgs, gen)
