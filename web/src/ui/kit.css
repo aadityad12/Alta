@@ -199,3 +199,5 @@
 /* recolour the drawing's own strokes and fills; white fills (the OUT terminal) stay white */
 .schematic-svg [class][stroke]:not([stroke='none']) { stroke: var(--sch); }
 .schematic-svg [class][fill]:not([fill='none']):not([fill='#FFFFFE']) { fill: var(--sch); }
+/* square line ends and corners (the labels' outlines have no linecap, so they keep theirs) */
+.schematic-svg [stroke-linecap] { stroke-linecap: square; stroke-linejoin: miter; }
