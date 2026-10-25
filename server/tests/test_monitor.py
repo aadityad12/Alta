@@ -135,13 +135,13 @@ def test_fixing_the_fault_is_confirmed_automatically():
     rig.do("fix")
     got = rig.run(2.0)
     assert len(got) == 1
-    assert "is now in the expected range: a steady 18" in got[0] or "is now in the expected range: a steady 19" in got[0]
+    assert "is now in the expected range: a steady 19" in got[0] or "is now in the expected range: a steady 20" in got[0]
     assert "It read 49" in got[0]
     assert rig.monitor.detectors["Y"].last_in_band is True
 
 
 def test_fix_via_the_dim_resistor_crosses_the_band():
-    rig = Rig(scenario="wrong_resistor_10k")  # 1650 mV, just under 1900 ± 150
+    rig = Rig(scenario="wrong_resistor_10k")  # 1760 mV, just under 2020 ± 120 (measured, #4)
     rig.ask()
     rig.do("Y 10c")
     assert "outside the expected range" in rig.run(1.0)[0]
