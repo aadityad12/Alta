@@ -63,6 +63,7 @@ The screen shows a banner for the pod, AI and voice parts (#31), and the server 
 | "the camera didn't answer" in the feed | `/dev/board` must be open, calibrated and in **Live** mode. Only one tab should be in Live mode |
 | Overlays land on the wrong rows (stand got bumped) | `/dev/board` → calibrate again (4 clicks, < 20 s) |
 | Replies take > 4 s | Slow network, or not in fast mode: the server's start-up log must say `agent model: claude-opus-5-5 (fast mode)` |
+| The camera page shows `Failed to resolve import "yaml"` (or any package) | Old web install. `cd web && npm install`, then restart `scripts/dev.sh` (it now reinstalls by itself when `package.json` changes) |
 | Port 8000 / 5173 in use when starting | An old `scripts/dev.sh` is still running: find its terminal and Ctrl-C it |
 | Anything else, and it won't recover | Ctrl-C `scripts/dev.sh`, run it again (~10 s), New student. Then the backup video if needed |
 
