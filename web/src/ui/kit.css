@@ -191,11 +191,11 @@
 .guide-dot-todo { width: 8px; height: 8px; border-radius: 999px; background: var(--ink-20); }
 
 /* ---------- Schematic ---------- */
-.schematic-box { position: relative; flex: none; }
-.schematic { position: absolute; left: 0; top: 0; width: 480px; height: 170px; transform-origin: 0 0; }
-.schematic-drawing { position: absolute; inset: 0; }
-.schematic-label { position: absolute; white-space: nowrap; font: 400 16px/24px var(--sans); }
-.sl-done { color: var(--ink-60); }
-.sl-todo { color: var(--ink-40); }
-.sl-now { color: var(--blue); font: 600 16px/22px var(--sans); }
-.sl-out { color: var(--blue); }
+.schematic-box { flex: none; }
+.schematic-svg { display: block; }
+.sch-done { --sch: var(--ink); }
+.sch-now { --sch: var(--blue); }
+.sch-todo { --sch: #d3d3d3; }
+/* recolour the drawing's own strokes and fills; white fills (the OUT terminal) stay white */
+.schematic-svg [class][stroke]:not([stroke='none']) { stroke: var(--sch); }
+.schematic-svg [class][fill]:not([fill='none']):not([fill='#FFFFFE']) { fill: var(--sch); }

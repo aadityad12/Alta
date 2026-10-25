@@ -1,8 +1,10 @@
 // Small building blocks, one per Figma component (Button, StatusChip, Reading, Banner, StepNav v2,
 // ProbeBadge, Logo/Wordmark, Schematic/Lab 1 + Lab 2), plus the bench's probe readings row. Styles in kit.css.
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { PROBE_NAME, PROBES, type Probe } from '../app/protocol'
+import lab1Svg from '../../../labs/lab1-led/schematic.svg?raw'
+import lab2Svg from '../../../labs/lab2-light/schematic.svg?raw'
 import wordmark from '../assets/brand/wordmark.svg'
 import bookInk from '../assets/figma/book-ink.svg'
 import chevronInk from '../assets/figma/chevron-right-ink.svg'
@@ -12,12 +14,6 @@ import dotGuide from '../assets/figma/dot-guide.svg'
 import dotGuideNow from '../assets/figma/dot-guide-current.svg'
 import lockInk from '../assets/figma/lock-ink40.svg'
 import refresh24 from '../assets/figma/refresh-24.svg'
-import lab1Done from '../assets/figma/schematic-lab1-done.svg'
-import lab1Step1 from '../assets/figma/schematic-lab1-step1.svg'
-import lab1Step2 from '../assets/figma/schematic-lab1-step2.svg'
-import lab1Step3 from '../assets/figma/schematic-lab1-step3.svg'
-import lab1Step4 from '../assets/figma/schematic-lab1-step4.svg'
-import lab2Drawing from '../assets/figma/schematic-lab2.svg'
 import unplug from '../assets/figma/unplug.svg'
 import wifiOff from '../assets/figma/wifi-off.svg'
 import './kit.css'
@@ -227,72 +223,63 @@ export function GuideDots({ total, current }: { total: number; current: number }
 }
 
 // ---------- Schematics ----------
-// Figma's Schematic/Lab 1: the part for the current step is blue, done parts ink, parts to come faint.
+// The labs' own schematic.svg (labs/<lab>/schematic.svg), recoloured by step: the part for the current
+// step is blue, done parts ink, parts to come light grey.
 
 export type SchematicStep = 1 | 2 | 3 | 4 | 'done'
 
-const LAB1_DRAWING: Record<string, string> = { 1: lab1Step1, 2: lab1Step2, 3: lab1Step3, 4: lab1Step4, done: lab1Done }
-// [text, left, top, the step that adds it]
-const LAB1_LABELS: [string, number, number, number][] = [
-  ['+5 V', -19, 68, 1], // level with the wire, just left of where it starts
-  ['row 6', 74, 40, 1],
-  ['W1', 44, 92, 1],
-  ['row 10', 180, 40, 2],
-  ['R1 220 Ω', 118, 104, 2],
-  ['row 13', 296, 40, 3],
-  ['D1 LED', 230, 110, 3],
-  ['GND', 402, 136, 4],
-  ['W2', 352, 92, 4],
-]
-const LAB2_LABELS: [string, number, number, boolean][] = [
-  ['+5 V', -19, 68, false],
-  ['row 26', 66, 96, false],
-  ['LDR1', 120, 116, false],
-  ['OUT · row 30', 222, 10, true],
-  ['R1 10 kΩ', 226, 104, false],
-  ['row 34', 318, 96, false],
-  ['GND', 402, 136, false],
-]
+// the drawing's area inside the 700 × 430 SVG (its white margin trimmed)
+const SCH = { x: 10, y: 14, w: 660, h: 390 }
+
+// the step that adds each piece: per <g id>, one step for the whole group or one per child;
+// `labels` is the labels group's paths in document order
+type StepMap = { groups: Record<string, number | number[]>; labels: number[] }
+const LAB_SCHEMATICS: Record<string, { svg: string; steps: StepMap }> = {
+  'lab1-led': {
+    svg: lab1Svg,
+    steps: {
+      groups: { supply: 1, n_5v: 1, 'r1-body': 2, n_led_anode: 3, 'd1-body': 3, n_led_cathode: 3, W2: 4, n_gnd: 4 },
+      // +5 V, (pod), GND, R1, 220 Ω, D1, Red LED, row 6, row 10, row 13
+      labels: [1, 1, 4, 2, 2, 3, 3, 1, 2, 3],
+    },
+  },
+  'lab2-light': {
+    svg: lab2Svg,
+    steps: {
+      // n_out: the wire down to R1 comes with R1; the OUT stub, node dot and terminal with step 4
+      groups: { supply: 1, n_5v: 1, 'ldr1-body': 2, n_out: [3, 4, 4, 4], 'r1-body': 3, n_gnd: 3 },
+      // +5 V, (pod), GND, LDR1, light sensor, OUT, row 26, row 30, R1, 10 kΩ, row 34
+      labels: [1, 1, 3, 2, 2, 4, 1, 2, 3, 3, 3],
+    },
+  },
+}
+
+/** The SVG markup with each piece classed sch-done / sch-now / sch-todo for this step. */
+function paintSchematic(svg: string, { groups, labels }: StepMap, step: SchematicStep): string {
+  const doc = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  const root = doc.documentElement
+  root.querySelector(':scope > rect')?.remove() // the white backdrop: let the card's colour show
+  root.setAttribute('viewBox', `${SCH.x} ${SCH.y} ${SCH.w} ${SCH.h}`)
+  root.setAttribute('width', '100%')
+  root.setAttribute('height', '100%')
+  root.setAttribute('class', 'schematic-svg')
+  const tone = (n: number) => (step === 'done' || n < step ? 'sch-done' : n === step ? 'sch-now' : 'sch-todo')
+  for (const g of Array.from(root.querySelectorAll('g[id]'))) {
+    const n = g.id === 'labels' ? labels : groups[g.id]
+    if (n === undefined) continue
+    Array.from(g.children).forEach((el, i) => {
+      const s = typeof n === 'number' ? n : n[i]
+      if (s !== undefined) el.setAttribute('class', tone(s))
+    })
+  }
+  return root.outerHTML
+}
 
 export function Schematic({ labId, step, scale = 1, fallbackUrl }: { labId?: string; step: SchematicStep; scale?: number; fallbackUrl?: string | null }) {
-  let body: ReactNode
-  if (labId === 'lab1-led') {
-    body = (
-      <>
-        <img className="schematic-drawing" src={LAB1_DRAWING[String(step)]} width={480} height={170} alt="Lab 1 schematic" />
-        {LAB1_LABELS.map(([t, x, y, n]) => {
-          const tone = step === 'done' || n < step ? 'done' : n === step ? 'now' : 'todo'
-          return (
-            <span key={t} className={`schematic-label sl-${tone}`} style={{ left: x, top: y }}>
-              {t}
-            </span>
-          )
-        })}
-      </>
-    )
-  } else if (labId === 'lab2-light') {
-    body = (
-      <>
-        <img className="schematic-drawing" src={lab2Drawing} width={480} height={170} alt="Lab 2 schematic" />
-        {LAB2_LABELS.map(([t, x, y, blue]) => (
-          <span key={t} className={`schematic-label ${blue ? 'sl-out' : 'sl-done'}`} style={{ left: x, top: y }}>
-            {t}
-          </span>
-        ))}
-      </>
-    )
-  } else if (fallbackUrl) {
-    return <img src={fallbackUrl} alt="Schematic" style={{ maxWidth: 480 * scale, maxHeight: 170 * scale }} />
-  } else {
-    return null
-  }
-  return (
-    <div className="schematic-box" style={{ width: 480 * scale, height: 170 * scale }}>
-      <div className="schematic" style={{ transform: `scale(${scale})` }}>
-        {body}
-      </div>
-    </div>
-  )
+  const lab = labId ? LAB_SCHEMATICS[labId] : undefined
+  const html = useMemo(() => (lab ? paintSchematic(lab.svg, lab.steps, step) : ''), [lab, step])
+  if (!lab) return fallbackUrl ? <img src={fallbackUrl} alt="Schematic" style={{ maxWidth: SCH.w * scale, maxHeight: SCH.h * scale }} /> : null
+  return <div className="schematic-box" role="img" aria-label="Circuit schematic" style={{ width: SCH.w * scale, height: SCH.h * scale }} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
 /** A schematic that scales itself to its box (never above `max`): to the width, and with `fill` to the height too. */
@@ -302,7 +289,7 @@ export function FitSchematic({ max = 1, fill, ...props }: { labId?: string; step
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
-    const ro = new ResizeObserver(() => setScale(Math.max(0.3, Math.min(max, el.clientWidth / 480, fill ? el.clientHeight / 170 : max))))
+    const ro = new ResizeObserver(() => setScale(Math.max(0.3, Math.min(max, el.clientWidth / SCH.w, fill ? el.clientHeight / SCH.h : max))))
     ro.observe(el)
     return () => ro.disconnect()
   }, [max, fill])
