@@ -20,12 +20,13 @@ From the repo root:
 4. [ ] Start ALTA: `scripts/dev.sh`. Leave this terminal open; Ctrl-C stops everything.
 5. [ ] In the browser:
    - `http://localhost:5173/dev/board`: pick the phone camera, calibrate (click the 4 corner holes it asks for), choose **Lab 1**, switch **Live** on.
+   - **Use Safari for any page with the camera.** Chrome can leave the iPhone (Continuity Camera) out of its camera list even when macOS and FaceTime see it (seen 2026-10-25, Chrome 155 / macOS 26). Each browser keeps its own calibration, so calibrate in the browser you demo with.
    - `http://localhost:8000/brain`: Lab 1 is loaded and the state is `idle`.
 6. [ ] Quick check: touch the yellow probe to the 5 V rail, and its gauge reads about 5 V. Hold the pod button, say "Can you hear me?", and ALTA answers out loud.
 
 ## Judging day: table setup (#46)
 
-1. [ ] Unpack: laptop + charger, pod in its dock + USB cable, lab board + fault kit, phone + stand + tape, hotspot phone.
+1. [ ] Unpack: laptop + charger, pod in its dock + USB cable, lab board + fault kit, phone + stand + tape, hotspot phone (a teammate's, not the camera phone). Tape the board down. The phone lies landscape, lens straight above the middle of the board, rows 1→63 running left to right in the picture.
 2. [ ] Do the [cold start](#cold-start-target--2-min).
 3. [ ] Stage the first fault (Lab 1, **LED reversed**: long leg into 13d, short leg into 10d). The LED is dark. Probes out.
 4. [ ] Keep the volume reasonable: the table is shared.
@@ -62,6 +63,8 @@ The screen shows a banner for the pod, AI and voice parts (#31), and the server 
 | No sound, but captions appear | Laptop volume / output device. `SPEAKER_DEVICE` in `.env` (`uv run python -m bench.voice_out --list-devices`) |
 | Sound or mic stops after earbuds connect or disconnect | Pin the built-in devices in `.env`: `MIC_DEVICE` / `SPEAKER_DEVICE` (names from `--list-devices`). ALTA reopens a dropped device by itself, but a pinned one never moves |
 | ALTA ignores the probe you plugged in | It only watches the probe and hole it asked for. Check the gauge shows an expected band, and that the probe is in that exact hole |
+| The phone isn't in the camera list | **Bluetooth on** (Continuity Camera needs Wi-Fi + Bluetooth on both devices, same Apple ID; the phone locked, still, landscape). Check FaceTime → Video menu lists it. Then use **Safari**: Chrome may never list it. Don't put the Mac on the phone's own hotspot |
+| Overlays drift after the board or phone moved | Tape the board to the table and the phone to its stand. Press **R** on the student screen (or Recalibrate on `/dev/board`) and drag the 4 handles back; it starts from the old clicks (~20 s) |
 | "the camera didn't answer" in the feed | `/dev/board` must be open, calibrated and in **Live** mode. Only one tab should be in Live mode |
 | Overlays land on the wrong rows (stand got bumped) | `/dev/board` → calibrate again (4 clicks, < 20 s) |
 | Replies take > 4 s | Slow network, or not in fast mode: the server's start-up log must say `agent model: claude-opus-5-5 (fast mode)` |
