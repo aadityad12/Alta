@@ -1,0 +1,104 @@
+lab: lab1-led
+port: /dev/cu.usbmodem101
+measured_at: 2026-10-24 17:34
+probes:
+  Y: n_5v
+  B: n_led_anode
+  G: n_led_cathode
+  W: n_gnd
+states:
+  normal:
+    vcc: 5001
+    nets:
+      n_5v:
+        mv: 4982
+        lo: 4977
+        hi: 4991
+      n_led_anode:
+        mv: 2019
+        lo: 2014
+        hi: 2024
+      n_led_cathode:
+        mv: 2
+        lo: 0
+        hi: 5
+      n_gnd:
+        mv: 0
+        lo: 0
+        hi: 0
+  led_reversed:
+    vcc: 4996
+    nets:
+      n_5v:
+        mv: 4996
+        lo: 4979
+        hi: 5001
+      n_led_anode:
+        mv: 4996
+        lo: 4979
+        hi: 5001
+      n_led_cathode:
+        mv: 0
+        lo: 0
+        hi: 0
+      n_gnd:
+        mv: 0
+        lo: 0
+        hi: 0
+  wrong_resistor_10k:
+    vcc: 4984
+    nets:
+      n_5v:
+        mv: 4981
+        lo: 4974
+        hi: 5001
+      n_led_anode:
+        mv: 1759
+        lo: 1757
+        hi: 1765
+      n_led_cathode:
+        mv: 0
+        lo: 0
+        hi: 0
+      n_gnd:
+        mv: 0
+        lo: 0
+        hi: 0
+  led_leg_off_by_one:
+    vcc: 4981
+    nets:
+      n_5v:
+        mv: 4981
+        lo: 4974
+        hi: 5001
+      n_led_anode:
+        mv: 4981
+        lo: 4974
+        hi: 5001
+      n_led_cathode:
+        mv: 0
+        lo: 0
+        hi: 0
+      n_gnd:
+        mv: 0
+        lo: 0
+        hi: 0
+  missing_ground_wire:
+    vcc: 4979
+    nets:
+      n_5v:
+        mv: 4979
+        lo: 4979
+        hi: 4979
+      n_led_anode:
+        mv: 4979
+        lo: 4974
+        hi: 4979
+      n_led_cathode:
+        mv: 4043
+        lo: 1553
+        hi: 4979
+      n_gnd:
+        mv: 0
+        lo: 0
+        hi: 0

@@ -1,4 +1,4 @@
-# Correct circuit. LED lit, row 10 ≈ 1.9 V. Format: labs/README.md
+# Correct circuit. LED lit, row 10 ≈ 2.0 V (measured 2019 mV). Format: labs/README.md
 lab: lab1-led
 fault: null
 probes: {Y: "10c"}
