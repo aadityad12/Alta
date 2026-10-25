@@ -26,3 +26,18 @@ def test_ipv6_only_hosts_still_resolve(monkeypatch):
     monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [V6])
     net.prefer_ipv4()
     assert socket.getaddrinfo("v6only", 443) == [V6]
+
+
+def test_the_server_runs_on_asyncio_not_uvloop_so_the_fix_applies(monkeypatch):
+    """uvloop resolves hosts inside libuv and never calls socket.getaddrinfo: on uvloop the venue Wi-Fi hung TTS 3/3."""
+    import sys
+
+    import uvicorn
+
+    from bench import __main__ as entry
+
+    got = {}
+    monkeypatch.setattr(uvicorn, "run", lambda *a, **k: got.update(k))
+    monkeypatch.setattr(sys, "argv", ["bench"])
+    entry.main()
+    assert got["loop"] == "asyncio"

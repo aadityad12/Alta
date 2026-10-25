@@ -27,6 +27,7 @@ def main() -> None:
         reload=not args.no_reload,
         reload_dirs=[str(pkg)] + ([str(labs)] if labs.is_dir() else []),
         reload_includes=["*.py", "*.yaml", "*.md", "*.svg"],
+        loop="asyncio",  # not uvloop: it resolves hosts in libuv, skipping bench.net's IPv4-first fix
     )
 
 
