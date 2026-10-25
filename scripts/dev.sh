@@ -10,7 +10,8 @@ command -v npm >/dev/null || { echo "Need Node.js 20+ (brew install node)"; exit
 [ -f "$ROOT/.env" ] || echo "Note: no .env yet. cp .env.example .env and fill in keys (fine to skip for now)."
 
 (cd "$ROOT/server" && uv sync --quiet)
-[ -d "$ROOT/web/node_modules" ] || (cd "$ROOT/web" && npm install --silent)
+# Install, or reinstall when package.json changed since the last install (a new dependency after a pull).
+[ "$ROOT/web/node_modules/.package-lock.json" -nt "$ROOT/web/package.json" ] || (cd "$ROOT/web" && npm install --silent)
 
 # Stop the whole process group (uvicorn reloader, npm, vite) on Ctrl-C or exit.
 cleanup() { trap - INT TERM EXIT; kill 0 2>/dev/null; }
