@@ -18,6 +18,7 @@ class FakePod:
         self.hello = True
         self.boot_s = 0.0  # > 0: act like an Uno that resets on open (silent, then hello, then samples)
         self.answers_ping = True
+        self.ping_errs = 0  # answer this many PINGs with err first (stray bytes from a replug merged into them)
         self.paused = False  # True: stop sending samples (a reboot or brown-out), but stay plugged in
         self.mv = list(mv)
         self.btn = 0
@@ -85,8 +86,13 @@ class FakePod:
                 *lines, buf = buf.split(b"\n")
                 for line in lines:
                     cmd = line.decode().strip()
+                    if not cmd:
+                        continue  # like the firmware: empty lines are ignored
                     self.commands.append(cmd)
-                    if cmd == "PING" and self.answers_ping:
+                    if cmd == "PING" and self.ping_errs:
+                        self.ping_errs -= 1
+                        self.send({"err": "unknown_cmd"})
+                    elif cmd == "PING" and self.answers_ping:
                         self.send({"pong": 1, "fw": "0.1.0"})
                     elif cmd != "PING" and not cmd.startswith("LED "):
                         self.send({"err": "unknown_cmd"})

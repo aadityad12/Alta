@@ -140,13 +140,17 @@ class PodBridge:
                         self._set_connected()
                     elif "pong" in msg:
                         self._set_connected()
+                    elif "err" in msg and pinged and not self.connected:
+                        # Our PING got merged with stray bytes from the replug. Still, the firmware answered.
+                        log.info("pod answered the ping (%s); connected", msg["err"])
+                        self._set_connected()
                     else:
                         self._dispatch(msg)
                         if not self.connected and not pinged:
                             # Readings but no hello: the pod was already running (no reset on open, or we
                             # missed its hello). It's past booting, so it's safe to ask whether it's there.
                             pinged = True
-                            self._write("PING")
+                            self._write("\nPING")  # the newline flushes any stray bytes the pod got on replug
             if self.connected:
                 if now - last_rx > SILENCE_S:
                     raise serial.SerialException(f"no data for {SILENCE_S:.0f} s")

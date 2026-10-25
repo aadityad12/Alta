@@ -170,6 +170,17 @@ def test_pod_already_running_is_confirmed_with_ping(pod):
         assert pod.commands[:1] == ["PING"]
 
 
+def test_a_replugged_pod_whose_ping_comes_back_garbled_connects_at_once(pod):
+    """Seen on the real pod: after a replug, stray bytes merge into our PING and the firmware answers err.
+    That still proves it's there, so don't sit out the 3 s fallback."""
+    pod.ping_errs = 1
+    pod.plug()
+    t0 = time.monotonic()
+    with app_for(pod.link) as c:
+        assert poll(lambda: c.app.state.pod.connected, timeout=1.0)
+        assert time.monotonic() - t0 < 1.0
+
+
 def test_pod_that_never_says_hello_or_pong_still_connects(pod):
     pod.hello = pod.answers_ping = False
     pod.plug()
