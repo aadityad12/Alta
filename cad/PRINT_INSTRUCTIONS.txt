@@ -1,0 +1,22 @@
+BENCH PROBE POD — PRINT HANDOFF
+
+PRINT FILE: pod_dock.stl (current mini-breadboard version)
+Finished part size: 144 x 86 x 8.4 mm.
+
+Printer: Bambu P1S, 0.4 mm nozzle.
+Material: PLA. Black preferred; white second choice.
+Layer height: 0.20 mm. Infill: 15%. Walls: 2. Supports: OFF.
+Orientation: broad flat base on bed; open side up.
+Scale: 100%, millimeter units. DO NOT SCALE TO FIT.
+
+Slice in Bambu Studio and confirm estimated time <= 2.5 hours.
+PRINT TIME HAS NOT YET BEEN VERIFIED. Review layer preview before printing.
+
+The Uno R3 sits on raised runners using foam mounting tape.
+The 170-point mini breadboard uses mounting tape in the right-hand outline.
+Its design envelope is 48 x 38 x 11 mm, based on ruler photographs.
+The clear mounting area is 54.8 x 42.8 mm, leaving extra clearance.
+The entire USB end and top remain open. Physical fit has not been tested.
+
+Contents: STL, top-view preview, fit sheet, geometry/assumption record,
+and a compact mini-board wiring proposal (hardware test still required).

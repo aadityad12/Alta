@@ -1,0 +1,42 @@
+{
+  "status": "DRAFT \u2014 assumed dimensions; do not submit for printing",
+  "units": "mm",
+  "breadboard_lwh": [
+    165.0,
+    55.0,
+    10.0
+  ],
+  "breadboard_pocket_lw": [
+    167.0,
+    57.0
+  ],
+  "breadboard_origin_xy": [
+    3.0,
+    3.0
+  ],
+  "uno_lw_assumed": [
+    68.6,
+    53.3
+  ],
+  "uno_origin_xy": [
+    9.0,
+    70.0
+  ],
+  "uno_underside_clearance": 5.0,
+  "retention": "foam mounting tape on Uno runners; removable tape under breadboard",
+  "outer_lwh": [
+    171.0,
+    128.3,
+    17.4
+  ],
+  "base_thickness": 2.4,
+  "breadboard_wall_above_base": 4.0,
+  "rear_wall_above_base": 15.0,
+  "solid_volume_cm3": 66.34,
+  "watertight": true,
+  "positive_volume": true,
+  "connected_bodies": 1,
+  "triangles": 1072,
+  "slicer_time": "NOT YET MEASURED; must be <= 2.5 hours in Bambu Studio",
+  "stl": "pod_dock_DRAFT.stl"
+}

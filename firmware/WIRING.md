@@ -1,5 +1,7 @@
 # Probe pod wiring (#5)
 
+> **The pod we built uses the 170-point mini breadboard instead** (it fits the 3D-printed dock): see `cad/MINI_POD_WIRING.md`, verified 11/11 on hardware. Same Uno pins, same firmware. This page is the layout for a full-size breadboard.
+
 The pod = Uno R3 + the **kit** 830-point breadboard ("pod board"), taped side by side on cardboard until the dock (#37) is printed. Hole names use the same scheme as the lab board (`docs/CONTRACTS.md` §4). Diagram: `docs/visuals/pod-wiring-v1.html`.
 
 ⚠️ **Power only from the laptop's USB.** Never connect the kit's 6×AA (9 V) pack to anything the probes can touch. Everything stays ≤ 5 V. No soldering.
